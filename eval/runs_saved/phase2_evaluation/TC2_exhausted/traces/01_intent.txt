@@ -1,0 +1,132 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-16 17:29:33
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+Why is the derivative of the cost with respect to a weight proportional to the activation feeding into it?
+
+Retrieved source spans:
+[
+  {
+    "span_id": "2fe1682a63",
+    "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this",
+    "location": "3b1b_ch4.txt:L34-L41",
+    "retrieval_score": 0.6999
+  },
+  {
+    "span_id": "0c04087f7a",
+    "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+    "location": "3b1b_ch4.txt:L83-L89",
+    "retrieval_score": 0.6769
+  },
+  {
+    "span_id": "3fff8997b2",
+    "text": "expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you to pause and think about each of those terms if you want. What does change here, though, is the derivative of the cost with respect to one of the activations in the layer L-1. In this case, the difference is that the neuron influences the cost function through multiple different paths. That is, on the one hand, it influences a(L)0,",
+    "location": "3b1b_ch4.txt:L110-L117",
+    "retrieval_score": 0.6725
+  },
+  {
+    "span_id": "49bb6160d2",
+    "text": "our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this del w term, think of it as meaning some tiny nudge to W, like a change by 0.01, and think of this del C term as meaning whatever the resulting nudge to the cost is. What we want is their ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L),",
+    "location": "3b1b_ch4.txt:L39-L46",
+    "retrieval_score": 0.618
+  },
+  {
+    "span_id": "2cbe659de4",
+    "text": "ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost. So we break things up by first looking at the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L) that caused it, as well as",
+    "location": "3b1b_ch4.txt:L44-L50",
+    "retrieval_score": 0.5986
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "mechanical",
+  "learning_goal": "Explain why the chain-rule derivative of the cost with respect to a weight equals the activation of the previous layer times other downstream factors, making the gradient proportional to that incoming activation.",
+  "relevant_spans": [
+    {
+      "span_id": "2fe1682a63",
+      "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this",
+      "location": "3b1b_ch4.txt:L34-L41",
+      "retrieval_score": 0.6999
+    },
+    {
+      "span_id": "49bb6160d2",
+      "text": "our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this del w term, think of it as meaning some tiny nudge to W, like a change by 0.01, and think of this del C term as meaning whatever the resulting nudge to the cost is. What we want is their ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L),",
+      "location": "3b1b_ch4.txt:L39-L46",
+      "retrieval_score": 0.618
+    },
+    {
+      "span_id": "2cbe659de4",
+      "text": "ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost. So we break things up by first looking at the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L) that caused it, as well as",
+      "location": "3b1b_ch4.txt:L44-L50",
+      "retrieval_score": 0.5986
+    },
+    {
+      "span_id": "0c04087f7a",
+      "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+      "location": "3b1b_ch4.txt:L83-L89",
+      "retrieval_score": 0.6769
+    }
+  ],
+  "key_claims_to_explain": [
+    "The weighted input z(L) is defined as w(L) times the previous activation plus a bias, so the derivative of z(L) with respect to w(L) is exactly the previous layer's activation a(L-1).",
+    "By the chain rule, dC/dw(L) = (dz(L)/dw(L)) · (da(L)/dz(L)) · (dC/da(L)), and since dz(L)/dw(L) = a(L-1), the whole expression is proportional to that incoming activation.",
+    "A tiny nudge to w(L) propagates to z(L), then to a(L), and finally to the cost C, which is why the chain rule must be applied across these three intermediate steps."
+  ],
+  "clarification_question": null
+}

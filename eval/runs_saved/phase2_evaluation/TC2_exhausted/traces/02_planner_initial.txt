@@ -1,0 +1,116 @@
+
+======================================================================
+TRACE: 02_planner_initial  @  2026-04-16 17:29:45
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Plan an explainer for the following:
+
+{
+  "learning_goal": "Explain why the chain-rule derivative of the cost with respect to a weight equals the activation of the previous layer times other downstream factors, making the gradient proportional to that incoming activation.",
+  "relevant_spans": [
+    {
+      "span_id": "2fe1682a63",
+      "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this",
+      "location": "3b1b_ch4.txt:L34-L41",
+      "retrieval_score": 0.6999
+    },
+    {
+      "span_id": "49bb6160d2",
+      "text": "our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this del w term, think of it as meaning some tiny nudge to W, like a change by 0.01, and think of this del C term as meaning whatever the resulting nudge to the cost is. What we want is their ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L),",
+      "location": "3b1b_ch4.txt:L39-L46",
+      "retrieval_score": 0.618
+    },
+    {
+      "span_id": "2cbe659de4",
+      "text": "ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost. So we break things up by first looking at the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L) that caused it, as well as",
+      "location": "3b1b_ch4.txt:L44-L50",
+      "retrieval_score": 0.5986
+    },
+    {
+      "span_id": "0c04087f7a",
+      "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+      "location": "3b1b_ch4.txt:L83-L89",
+      "retrieval_score": 0.6769
+    }
+  ],
+  "key_claims_to_explain": [
+    "The weighted input z(L) is defined as w(L) times the previous activation plus a bias, so the derivative of z(L) with respect to w(L) is exactly the previous layer's activation a(L-1).",
+    "By the chain rule, dC/dw(L) = (dz(L)/dw(L)) \u00b7 (da(L)/dz(L)) \u00b7 (dC/da(L)), and since dz(L)/dw(L) = a(L-1), the whole expression is proportional to that incoming activation.",
+    "A tiny nudge to w(L) propagates to z(L), then to a(L), and finally to the cost C, which is why the chain rule must be applied across these three intermediate steps."
+  ]
+}
+
+Return the JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "A tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost.",
+      "visual_goal": "Show a horizontal chain of four labeled nodes: w(L) → z(L) → a(L) → C. Animate a small highlighted arrow labeled 'tiny nudge δw' originating at w(L), then sequentially pulse each arrow and node rightward to C, illustrating the propagation path.",
+      "source_ref": "49bb6160d2",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The derivative of z(L) with respect to w(L) is exactly the previous layer's activation a(L-1), because z(L) = w(L)·a(L-1) + b(L).",
+      "visual_goal": "Display the equation z(L) = w(L)·a(L-1) + b(L) as a text label. Then highlight the w(L) term and show the derivative operation, crossing out the bias and leaving dz/dw = a(L-1). Use a color highlight (e.g. yellow box) around a(L-1) to emphasize it is the result.",
+      "source_ref": "0c04087f7a",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "By the chain rule, dC/dw(L) = (dz(L)/dw(L)) · (da(L)/dz(L)) · (dC/da(L)), and since dz(L)/dw(L) = a(L-1), the whole expression is proportional to that incoming activation.",
+      "visual_goal": "Show the full chain-rule product as three labeled fractions multiplied together: [dz/dw] · [da/dz] · [dC/da]. Animate substituting a(L-1) into the first factor, then draw a bracket under the entire product labeled 'dC/dw(L) ∝ a(L-1)'. Use arrows connecting back to the propagation chain from scene 1.",
+      "source_ref": "2cbe659de4",
+      "duration_sec": 25
+    },
+    {
+      "scene_id": 4,
+      "claim": "What we want is the ratio of the nudge to the cost to the nudge to w(L), i.e. the derivative of C with respect to w(L), which tells us how sensitive the cost function is to small changes in the weight.",
+      "visual_goal": "Show two small number lines side by side: one for w(L) with a small tick labeled '+δw', one for C with a resulting tick labeled '+δC'. Draw a large arrow between them labeled 'dC/dw(L) = sensitivity'. Fade in a summary text: 'Gradient ∝ incoming activation a(L-1)'.",
+      "source_ref": "2fe1682a63",
+      "duration_sec": 20
+    }
+  ]
+}

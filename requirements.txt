@@ -1,0 +1,21 @@
+# Core LLM SDKs
+anthropic>=0.39.0
+openai>=1.50.0
+
+# Retrieval
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0
+numpy>=1.26.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.9.0
+
+# Rendering (Phase 3 — not imported in Phase 2 code)
+# manim>=0.18.0
+# ffmpeg-python>=0.2.0
+
+# Dev
+pytest>=8.3.0
+
+yt-dlp==2026.03.17

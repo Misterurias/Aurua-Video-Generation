@@ -1,0 +1,140 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_1  @  2026-04-16 17:48:36
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "In the single-neuron-per-layer case the chain rule is applied straightforwardly backwards through the network; when layers have multiple neurons, the same chain rule idea still applies but requires keeping track of a few more indices.",
+        "visual_goal": "Show a vertical chain of three circles (neurons), each connected by a single arrow. Label the arrows with derivative symbols (dz/dw, da/dz, dC/da). Highlight the single path in yellow and display the product of derivatives as a text label beneath the chain. Then fade in a second and third neuron in the middle layer, drawing new arrows, and add index subscripts to the labels to show the added bookkeeping.",
+        "source_ref": "df7eaa5449",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 2,
+        "claim": "When layers have multiple neurons, the equations describing how sensitive the cost is to a specific weight look essentially the same as in the one-neuron-per-layer case, just with more indices to track.",
+        "visual_goal": "Side-by-side comparison: on the left, the simple single-neuron chain with one derivative product equation; on the right, a small network with two neurons in the middle layer, showing the analogous equations with subscript indices added. Highlight matching structural parts in the same color on both sides to emphasize the parallel. Add a text label: 'Same structure, more indices'.",
+        "source_ref": "2cf36b3006",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 3,
+        "claim": "When a neuron feeds into multiple downstream neurons, its influence on the cost travels through every downstream connection, and the multivariable chain rule accounts for this by summing the contributions along each path, because the total change in cost is the sum of changes caused through each downstream neuron.",
+        "visual_goal": "Show a single source neuron on the left with three arrows fanning out to three downstream neurons, each arrow in a distinct color (red, blue, green). Animate a pulsing nudge on the source neuron, then light up each colored arrow in sequence. On the right, build up the equation dC/da = (dC/da_1)(da_1/da) + (dC/da_2)(da_2/da) + (dC/da_3)(da_3/da) term by term, highlighting the matching colored path as each term appears. Draw a brace under all terms labeled 'sum over all paths'.",
+        "source_ref": "2cf36b3006",
+        "duration_sec": 26
+      },
+      {
+        "scene_id": 4,
+        "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network.",
+        "visual_goal": "Zoom out to show the full network diagram with all paths. Collect all the summed path expressions into a single gradient vector displayed as a column of partial derivatives. Draw a downhill arrow on a simple parabola-shaped cost curve to the right, labeled 'gradient descent step', connecting the computed derivatives to the act of minimizing cost.",
+        "source_ref": "59a878dc11",
+        "duration_sec": 15
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "df7eaa5449",
+      "text": "keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give the layers multiple neurons, really it's just a few more indices to keep track of. Rather than the activation of",
+      "location": "3b1b_ch4.txt:L88-L94",
+      "retrieval_score": 0.5573
+    },
+    {
+      "span_id": "2cf36b3006",
+      "text": "relevant weighted sum, like z, so that the activation of the last layer is just your special function, like the sigmoid, applied to z. You can see what I mean, where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you",
+      "location": "3b1b_ch4.txt:L105-L112",
+      "retrieval_score": 0.5299
+    },
+    {
+      "span_id": "59a878dc11",
+      "text": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes time for your mind to digest it all.",
+      "location": "3b1b_ch4.txt:L127-L130",
+      "retrieval_score": 0.5303
+    }
+  ],
+  "retry_count": 1
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+```json
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.82,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.85,
+      "reason": null
+    },
+    {
+      "scene_id": 3,
+      "grounded": false,
+      "confidence": 0.88,
+      "reason": "The span 2cf36b3006 discusses the multi-neuron case and chain rule derivatives looking essentially the same as the one-neuron case, but it does not describe the multivariable chain rule summing contributions along each downstream path when a neuron feeds into multiple downstream neurons. The specific claim about summing partial contributions through each downstream connection (dC/da = sum of (dC/da_k)(da_k/da) terms) is not present in this span."
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.95,
+      "reason": null
+    }
+  ],
+  "retry_count": 1
+}
+```

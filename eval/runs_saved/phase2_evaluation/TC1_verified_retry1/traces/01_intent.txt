@@ -1,0 +1,132 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-16 17:28:28
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+What does the gradient of the cost function tell us about which weights to change?
+
+Retrieved source spans:
+[
+  {
+    "span_id": "0c04087f7a",
+    "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+    "location": "3b1b_ch4.txt:L83-L89",
+    "retrieval_score": 0.6995
+  },
+  {
+    "span_id": "2fe1682a63",
+    "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this",
+    "location": "3b1b_ch4.txt:L34-L41",
+    "retrieval_score": 0.6766
+  },
+  {
+    "span_id": "924702e6a8",
+    "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost",
+    "location": "3b1b_ch4.txt:L121-L128",
+    "retrieval_score": 0.6723
+  },
+  {
+    "span_id": "349677eae5",
+    "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is almost identical. We just need to change out this del z del w term for",
+    "location": "3b1b_ch4.txt:L73-L80",
+    "retrieval_score": 0.6514
+  },
+  {
+    "span_id": "3fff8997b2",
+    "text": "expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you to pause and think about each of those terms if you want. What does change here, though, is the derivative of the cost with respect to one of the activations in the layer L-1. In this case, the difference is that the neuron influences the cost function through multiple different paths. That is, on the one hand, it influences a(L)0,",
+    "location": "3b1b_ch4.txt:L110-L117",
+    "retrieval_score": 0.6237
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Explain how the gradient of the cost function — built from partial derivatives with respect to each weight and bias — tells us the direction and magnitude of change needed to reduce the cost, and how backpropagation computes those partial derivatives layer by layer.",
+  "relevant_spans": [
+    {
+      "span_id": "924702e6a8",
+      "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost",
+      "location": "3b1b_ch4.txt:L121-L128",
+      "retrieval_score": 0.6723
+    },
+    {
+      "span_id": "349677eae5",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is almost identical. We just need to change out this del z del w term for",
+      "location": "3b1b_ch4.txt:L73-L80",
+      "retrieval_score": 0.6514
+    },
+    {
+      "span_id": "2fe1682a63",
+      "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+      "location": "3b1b_ch4.txt:L34-L41",
+      "retrieval_score": 0.6766
+    },
+    {
+      "span_id": "0c04087f7a",
+      "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+      "location": "3b1b_ch4.txt:L83-L89",
+      "retrieval_score": 0.6995
+    }
+  ],
+  "key_claims_to_explain": [
+    "The gradient of the cost function is a vector of partial derivatives of the cost with respect to every weight and bias in the network, each measuring how sensitively the cost responds to a small change in that parameter.",
+    "A large positive partial derivative for a given weight means increasing that weight raises the cost, so the network should decrease it; the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.",
+    "Backpropagation computes these partial derivatives efficiently by applying the chain rule layer by layer backwards through the network, reusing sensitivity information from later layers to find sensitivities in earlier layers."
+  ],
+  "clarification_question": null
+}

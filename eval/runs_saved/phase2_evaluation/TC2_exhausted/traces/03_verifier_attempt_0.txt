@@ -1,0 +1,164 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_0  @  2026-04-16 17:30:00
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "A tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost.",
+        "visual_goal": "Show a horizontal chain of four labeled nodes: w(L) \u2192 z(L) \u2192 a(L) \u2192 C. Animate a small highlighted arrow labeled 'tiny nudge \u03b4w' originating at w(L), then sequentially pulse each arrow and node rightward to C, illustrating the propagation path.",
+        "source_ref": "49bb6160d2",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The derivative of z(L) with respect to w(L) is exactly the previous layer's activation a(L-1), because z(L) = w(L)\u00b7a(L-1) + b(L).",
+        "visual_goal": "Display the equation z(L) = w(L)\u00b7a(L-1) + b(L) as a text label. Then highlight the w(L) term and show the derivative operation, crossing out the bias and leaving dz/dw = a(L-1). Use a color highlight (e.g. yellow box) around a(L-1) to emphasize it is the result.",
+        "source_ref": "0c04087f7a",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "By the chain rule, dC/dw(L) = (dz(L)/dw(L)) \u00b7 (da(L)/dz(L)) \u00b7 (dC/da(L)), and since dz(L)/dw(L) = a(L-1), the whole expression is proportional to that incoming activation.",
+        "visual_goal": "Show the full chain-rule product as three labeled fractions multiplied together: [dz/dw] \u00b7 [da/dz] \u00b7 [dC/da]. Animate substituting a(L-1) into the first factor, then draw a bracket under the entire product labeled 'dC/dw(L) \u221d a(L-1)'. Use arrows connecting back to the propagation chain from scene 1.",
+        "source_ref": "2cbe659de4",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 4,
+        "claim": "What we want is the ratio of the nudge to the cost to the nudge to w(L), i.e. the derivative of C with respect to w(L), which tells us how sensitive the cost function is to small changes in the weight.",
+        "visual_goal": "Show two small number lines side by side: one for w(L) with a small tick labeled '+\u03b4w', one for C with a resulting tick labeled '+\u03b4C'. Draw a large arrow between them labeled 'dC/dw(L) = sensitivity'. Fade in a summary text: 'Gradient \u221d incoming activation a(L-1)'.",
+        "source_ref": "2fe1682a63",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "2fe1682a63",
+      "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this",
+      "location": "3b1b_ch4.txt:L34-L41",
+      "retrieval_score": 0.6999
+    },
+    {
+      "span_id": "49bb6160d2",
+      "text": "our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)? When you see this del w term, think of it as meaning some tiny nudge to W, like a change by 0.01, and think of this del C term as meaning whatever the resulting nudge to the cost is. What we want is their ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L),",
+      "location": "3b1b_ch4.txt:L39-L46",
+      "retrieval_score": 0.618
+    },
+    {
+      "span_id": "2cbe659de4",
+      "text": "ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost. So we break things up by first looking at the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L) that caused it, as well as",
+      "location": "3b1b_ch4.txt:L44-L50",
+      "retrieval_score": 0.5986
+    },
+    {
+      "span_id": "0c04087f7a",
+      "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+      "location": "3b1b_ch4.txt:L83-L89",
+      "retrieval_score": 0.6769
+    }
+  ],
+  "retry_count": 0
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+I need to carefully check each scene's claim against its cited source span.
+
+**Scene 1** (source: 49bb6160d2):
+Claim: "A tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost."
+Span text: "...this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L)..." — the span contains this almost verbatim. However, "which directly influences the cost" — the span cuts off at "a(L)," but the next span (2cbe659de4) contains "which directly influences the cost." The span 49bb6160d2 ends at "causes some nudge to a(L)," without the "directly influences the cost" part. This is a partial match — the span implies it but doesn't directly state the final part. I'll consider this a reasonable inference since the chain is clearly leading to cost. Confidence ~0.65.
+
+**Scene 2** (source: 0c04087f7a):
+Claim: "The derivative of z(L) with respect to w(L) is exactly the previous layer's activation a(L-1), because z(L) = w(L)·a(L-1) + b(L)."
+Span text: "...the sensitivity of z to the previous activation, comes out to be the weight w(L)." — This says the sensitivity of z to the **previous activation** is w(L), NOT that dz/dw(L) = a(L-1). The claim states dz/dw(L) = a(L-1), but the span describes dz/da(L-1) = w(L). These are different derivatives. The span does NOT support the claim that dz(L)/dw(L) = a(L-1). This is ungrounded.
+
+**Scene 3** (source: 2cbe659de4):
+Claim: Chain rule expression dC/dw(L) = (dz/dw)·(da/dz)·(dC/da), and dz/dw = a(L-1).
+Span text: "...the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L)..." — The span describes the chain rule breakdown but does NOT state that dz/dw(L) = a(L-1). The span is about the chain rule structure but doesn't confirm the value a(L-1) for that derivative.
+
+**Scene 4** (source: 2fe1682a63):
+Claim: "What we want is the ratio of the nudge to the cost to the nudge to w(L), i.e. the derivative of C with respect to w(L), which tells us how sensitive the cost function is to small changes in the weight."
+Span text: "Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?" — This directly supports the claim. Grounded=true, confidence ~0.9. Note: "Gradient ∝ incoming activation a(L-1)" in the visual goal is not in this span, but that's a visual embellishment, not the core claim.
+
+```json
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.65,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": false,
+      "confidence": 0.9,
+      "reason": "The span states that the sensitivity of z to the previous activation a(L-1) is w(L) (i.e., dz/da(L-1) = w(L)), not that dz/dw(L) = a(L-1). The claim reverses which derivative equals which quantity. The span does not state that dz(L)/dw(L) = a(L-1), nor does it present the equation z(L) = w(L)·a(L-1) + b(L)."
+    },
+    {
+      "scene_id": 3,
+      "grounded": false,
+      "confidence": 0.75,
+      "reason": "The span describes the chain rule breakdown conceptually but does not state that dz(L)/dw(L) = a(L-1). The claim that the first factor equals a(L-1) is not supported by this span; the span only describes the structure of the chain rule without giving the value of dz/dw(L)."
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.9,
+      "reason": null
+    }
+  ],
+  "retry_count": 0
+}
+```

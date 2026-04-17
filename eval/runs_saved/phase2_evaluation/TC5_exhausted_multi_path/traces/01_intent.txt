@@ -1,0 +1,126 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-16 17:47:54
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+Why does the chain rule give us a sum over paths when a neuron connects to multiple neurons?
+
+Retrieved source spans:
+[
+  {
+    "span_id": "6a5a90fdee",
+    "text": "goal is to show how people in machine learning commonly think about the chain rule from calculus in the context of networks, which has a different feel from how most introductory calculus courses approach the subject. For those of you uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+    "location": "3b1b_ch4.txt:L6-L13",
+    "retrieval_score": 0.5968
+  },
+  {
+    "span_id": "df7eaa5449",
+    "text": "keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give the layers multiple neurons, really it's just a few more indices to keep track of. Rather than the activation of",
+    "location": "3b1b_ch4.txt:L88-L94",
+    "retrieval_score": 0.5573
+  },
+  {
+    "span_id": "3c4efe5bc3",
+    "text": "case comes out to be a(L-1). Now I don't know about you, but I think it's easy to get stuck head down in the formulas without taking a moment to sit back and remind yourself of what they all mean. In the case of this last derivative, the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in. And all of",
+    "location": "3b1b_ch4.txt:L63-L69",
+    "retrieval_score": 0.533
+  },
+  {
+    "span_id": "59a878dc11",
+    "text": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes time for your mind to digest it all.",
+    "location": "3b1b_ch4.txt:L127-L130",
+    "retrieval_score": 0.5303
+  },
+  {
+    "span_id": "2cf36b3006",
+    "text": "relevant weighted sum, like z, so that the activation of the last layer is just your special function, like the sigmoid, applied to z. You can see what I mean, where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you",
+    "location": "3b1b_ch4.txt:L105-L112",
+    "retrieval_score": 0.5299
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Explain why the chain rule produces a sum over all paths from a neuron to the cost function when that neuron feeds into multiple downstream neurons.",
+  "relevant_spans": [
+    {
+      "span_id": "df7eaa5449",
+      "text": "keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give the layers multiple neurons, really it's just a few more indices to keep track of. Rather than the activation of",
+      "location": "3b1b_ch4.txt:L88-L94",
+      "retrieval_score": 0.5573
+    },
+    {
+      "span_id": "2cf36b3006",
+      "text": "relevant weighted sum, like z, so that the activation of the last layer is just your special function, like the sigmoid, applied to z. You can see what I mean, where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you",
+      "location": "3b1b_ch4.txt:L105-L112",
+      "retrieval_score": 0.5299
+    },
+    {
+      "span_id": "59a878dc11",
+      "text": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes time for your mind to digest it all.",
+      "location": "3b1b_ch4.txt:L127-L130",
+      "retrieval_score": 0.5303
+    }
+  ],
+  "key_claims_to_explain": [
+    "When a neuron feeds into multiple downstream neurons, a small nudge to that neuron's activation influences the cost through every one of those downstream connections simultaneously, so each path contributes an independent additive effect.",
+    "The multivariable chain rule handles this by summing the partial derivatives along each path from the neuron to the cost, because the total change in cost is the sum of changes caused through each downstream neuron.",
+    "In the single-neuron-per-layer case there is only one path, giving a simple product of derivatives; adding multiple neurons per layer introduces multiple paths and therefore a sum of such products."
+  ],
+  "clarification_question": null
+}

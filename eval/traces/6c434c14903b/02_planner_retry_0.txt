@@ -1,0 +1,198 @@
+
+======================================================================
+TRACE: 02_planner_retry_0  @  2026-04-16 17:29:16
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Explain how the gradient of the cost function \u2014 built from partial derivatives with respect to each weight and bias \u2014 tells us the direction and magnitude of change needed to reduce the cost, and how backpropagation computes those partial derivatives layer by layer.",
+  "relevant_spans": [
+    {
+      "span_id": "924702e6a8",
+      "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost",
+      "location": "3b1b_ch4.txt:L121-L128",
+      "retrieval_score": 0.6723
+    },
+    {
+      "span_id": "349677eae5",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is almost identical. We just need to change out this del z del w term for",
+      "location": "3b1b_ch4.txt:L73-L80",
+      "retrieval_score": 0.6514
+    },
+    {
+      "span_id": "2fe1682a63",
+      "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+      "location": "3b1b_ch4.txt:L34-L41",
+      "retrieval_score": 0.6766
+    },
+    {
+      "span_id": "0c04087f7a",
+      "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+      "location": "3b1b_ch4.txt:L83-L89",
+      "retrieval_score": 0.6995
+    }
+  ],
+  "key_claims_to_explain": [
+    "The gradient of the cost function is a vector of partial derivatives of the cost with respect to every weight and bias in the network, each measuring how sensitively the cost responds to a small change in that parameter.",
+    "A large positive partial derivative for a given weight means increasing that weight raises the cost, so the network should decrease it; the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.",
+    "Backpropagation computes these partial derivatives efficiently by applying the chain rule layer by layer backwards through the network, reusing sensitivity information from later layers to find sensitivities in earlier layers."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient of the cost function is a vector of partial derivatives of the cost with respect to every weight and bias in the network, each measuring how sensitively the cost responds to a small change in that parameter.",
+        "visual_goal": "Show a small neural network (3 layers, 2-3 nodes each) with labeled weights and biases. Fade in a column vector labeled 'gradient' beside it, with entries written as \u2202C/\u2202w1, \u2202C/\u2202w2, ..., \u2202C/\u2202b1, etc. Highlight each weight/bias in the network and its corresponding entry in the gradient vector with matching colors.",
+        "source_ref": "349677eae5",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+        "visual_goal": "Zoom into the last layer of the network. Show a single weight w(L) with a small number line beneath it. Animate a tiny nudge to w(L) and show the resulting change in the cost C on a separate number line. Label the ratio as \u2202C/\u2202w(L) and display it as the slope of a simple curve C vs w(L) on a 2D axes.",
+        "source_ref": "2fe1682a63",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "A large positive partial derivative for a given weight means increasing that weight raises the cost, so the network should decrease it; the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.",
+        "visual_goal": "Show a simple 2D cost curve (parabola) with a dot representing the current weight value. Draw an upward-pointing arrow labeled '+\u2202C/\u2202w' at the dot indicating the cost rises if w increases. Then animate the dot stepping left (decreasing w) along the curve toward the minimum, with a label 'subtract gradient component'. Repeat briefly for a negative partial derivative case showing the dot stepping right.",
+        "source_ref": "349677eae5",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "Backpropagation computes these partial derivatives efficiently by applying the chain rule layer by layer backwards through the network, reusing sensitivity information from later layers to find sensitivities in earlier layers.",
+        "visual_goal": "Show the neural network again with arrows flowing right-to-left (backwards). At the output layer, display a chain rule expression \u2202C/\u2202w(L) = (\u2202C/\u2202a) \u00b7 (\u2202a/\u2202z) \u00b7 (\u2202z/\u2202w). Animate each factor lighting up in sequence. Then show an arrow carrying the sensitivity value \u2202C/\u2202a(L-1) backwards into the previous layer, where a new chain rule expression is assembled reusing that value. Use color-coded boxes for each factor to emphasize reuse.",
+        "source_ref": "0c04087f7a",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 5,
+        "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost.",
+        "visual_goal": "Return to the full network view. Animate the backwards pass sweeping from output to input layer, with each weight and bias lighting up as its partial derivative is computed. As each \u2202C/\u2202w value is found, show it filling into the corresponding slot of the gradient vector column shown in scene 1. End with the complete gradient vector filled in and an arrow labeled 'step opposite gradient' pointing toward lower cost.",
+        "source_ref": "924702e6a8",
+        "duration_sec": 15
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": false,
+        "confidence": 0.75,
+        "reason": "The span (349677eae5) mentions that the gradient vector is built from partial derivatives of the cost with respect to all weights and biases, but it does not describe the gradient as 'a vector of partial derivatives... each measuring how sensitively the cost responds to a small change in that parameter.' The span only briefly references the gradient vector in passing while discussing a single component; it does not provide the full definitional claim made in scene 1 about what the gradient vector is and what each entry measures."
+      },
+      {
+        "scene_id": 2,
+        "grounded": true,
+        "confidence": 0.95,
+        "reason": "The span (2fe1682a63) directly states: 'Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?' This matches the claim verbatim."
+      },
+      {
+        "scene_id": 3,
+        "grounded": false,
+        "confidence": 0.8,
+        "reason": "The span (349677eae5) discusses partial derivatives and the gradient vector but does not contain the claim that 'a large positive partial derivative means increasing that weight raises the cost, so the network should decrease it' or that 'the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.' The span does not discuss the interpretation of sign/magnitude of partial derivatives or the update rule."
+      },
+      {
+        "scene_id": 4,
+        "grounded": false,
+        "confidence": 0.72,
+        "reason": "The span (0c04087f7a) describes iterating the chain rule idea backwards and tracking sensitivity to previous weights and activations, which partially supports the claim. However, it does not explicitly state that backpropagation 'computes partial derivatives efficiently' or that it 'reuses sensitivity information from later layers to find sensitivities in earlier layers' as a general algorithmic principle. The span only describes the mechanics of one step without framing it as efficient reuse."
+      },
+      {
+        "scene_id": 5,
+        "grounded": true,
+        "confidence": 0.88,
+        "reason": "The span (924702e6a8) directly states: 'These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost,' which matches the claim closely and directly."
+      }
+    ],
+    "retry_count": 0
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The gradient vector is built up from the partial derivatives of the cost function with respect to all those weights and biases, and computing even one such partial derivative — for example del C del w — is more than 50% of the work needed for the full gradient.",
+      "visual_goal": "Show a small neural network (3 layers, 2-3 nodes each) with labeled weights and biases. Fade in a column vector labeled 'gradient' beside it, with entries written as ∂C/∂w1, ∂C/∂w2, ..., ∂C/∂b1, etc. Highlight one entry ∂C/∂w(L) in a bright color and label it '> 50% of the work', then dim the rest slightly to emphasize that solving one component unlocks the others.",
+      "source_ref": "349677eae5",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+      "visual_goal": "Zoom into the last layer of the network. Show a single weight w(L) with a small number line beneath it. Animate a tiny nudge to w(L) and show the resulting change in the cost C on a separate number line. Label the ratio as ∂C/∂w(L) and display it as the slope of a simple curve C vs w(L) on a 2D axes.",
+      "source_ref": "2fe1682a63",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "The sensitivity to the bias is almost identical to the sensitivity to the weight — we just need to change out the del z del w term — showing that once one partial derivative is known, others follow the same pattern.",
+      "visual_goal": "Side-by-side display of two chain rule expressions: ∂C/∂w = (∂C/∂a)·(∂a/∂z)·(∂z/∂w) and ∂C/∂b = (∂C/∂a)·(∂a/∂z)·(∂z/∂b). Highlight the first two factors in matching colors to show they are shared, then highlight only the last factor in a contrasting color to show the single difference. Animate a bracket labeled 'same' over the shared factors and 'swap this' over the differing term.",
+      "source_ref": "349677eae5",
+      "duration_sec": 15
+    },
+    {
+      "scene_id": 4,
+      "claim": "The sensitivity of z to the previous layer's activation comes out to be the weight w(L), and we can keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and activations.",
+      "visual_goal": "Show the neural network with arrows flowing right-to-left. At the output layer, display the chain rule expression ∂C/∂w(L) with each factor lighting up in sequence. Then highlight the factor ∂z/∂a(L-1) = w(L) with a label 'equals w(L)'. Animate an arrow carrying the sensitivity value ∂C/∂a(L-1) backwards into the previous layer, where a new chain rule expression assembles reusing that value. Use color-coded boxes for each factor to show the iterative reuse.",
+      "source_ref": "0c04087f7a",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 5,
+      "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost.",
+      "visual_goal": "Return to the full network view. Animate the backwards pass sweeping from output to input layer, with each weight and bias lighting up as its partial derivative is computed. As each ∂C/∂w value is found, show it filling into the corresponding slot of the gradient vector column shown in scene 1. End with the complete gradient vector filled in and an arrow labeled 'step opposite gradient' pointing toward lower cost.",
+      "source_ref": "924702e6a8",
+      "duration_sec": 15
+    }
+  ]
+}

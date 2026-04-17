@@ -1,0 +1,172 @@
+
+======================================================================
+TRACE: 02_planner_retry_0  @  2026-04-16 17:48:31
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Explain why the chain rule produces a sum over all paths from a neuron to the cost function when that neuron feeds into multiple downstream neurons.",
+  "relevant_spans": [
+    {
+      "span_id": "df7eaa5449",
+      "text": "keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give the layers multiple neurons, really it's just a few more indices to keep track of. Rather than the activation of",
+      "location": "3b1b_ch4.txt:L88-L94",
+      "retrieval_score": 0.5573
+    },
+    {
+      "span_id": "2cf36b3006",
+      "text": "relevant weighted sum, like z, so that the activation of the last layer is just your special function, like the sigmoid, applied to z. You can see what I mean, where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you",
+      "location": "3b1b_ch4.txt:L105-L112",
+      "retrieval_score": 0.5299
+    },
+    {
+      "span_id": "59a878dc11",
+      "text": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes time for your mind to digest it all.",
+      "location": "3b1b_ch4.txt:L127-L130",
+      "retrieval_score": 0.5303
+    }
+  ],
+  "key_claims_to_explain": [
+    "When a neuron feeds into multiple downstream neurons, a small nudge to that neuron's activation influences the cost through every one of those downstream connections simultaneously, so each path contributes an independent additive effect.",
+    "The multivariable chain rule handles this by summing the partial derivatives along each path from the neuron to the cost, because the total change in cost is the sum of changes caused through each downstream neuron.",
+    "In the single-neuron-per-layer case there is only one path, giving a simple product of derivatives; adding multiple neurons per layer introduces multiple paths and therefore a sum of such products."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "In the single-neuron-per-layer case there is only one path, giving a simple product of derivatives; adding multiple neurons per layer introduces multiple paths and therefore a sum of such products.",
+        "visual_goal": "Show a vertical chain of three circles (neurons), each connected by a single arrow. Label the arrows with derivative symbols (dz/dw, da/dz, dC/da). Highlight the single path in yellow and display the product of derivatives as a text label beneath the chain. Then fade in a second and third neuron in the middle layer, drawing new arrows from the input neuron to each, making three distinct colored paths visible.",
+        "source_ref": "df7eaa5449",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 2,
+        "claim": "When a neuron feeds into multiple downstream neurons, a small nudge to that neuron's activation influences the cost through every one of those downstream connections simultaneously, so each path contributes an independent additive effect.",
+        "visual_goal": "Animate a small delta-nudge (a pulsing highlight) on the single source neuron on the left. Show three arrows fanning out to three downstream neurons, each arrow lighting up in a distinct color (red, blue, green) in sequence to represent simultaneous influence. Next to each arrow display a small partial-derivative label. Add a text annotation: 'Each path carries an independent effect on C'.",
+        "source_ref": "df7eaa5449",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 3,
+        "claim": "The multivariable chain rule handles this by summing the partial derivatives along each path from the neuron to the cost, because the total change in cost is the sum of changes caused through each downstream neuron.",
+        "visual_goal": "Keep the three colored paths visible. On the right side of the screen, build up an equation step by step: dC/da = (partial dC/da_1)(da_1/da) + (partial dC/da_2)(da_2/da) + (partial dC/da_3)(da_3/da). As each term appears, highlight the corresponding colored path on the network diagram. Finally, draw a brace under all three terms with the label 'sum over all paths'.",
+        "source_ref": "2cf36b3006",
+        "duration_sec": 26
+      },
+      {
+        "scene_id": 4,
+        "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network.",
+        "visual_goal": "Zoom out to show the full network diagram with all paths. Collect all the summed path expressions into a single gradient vector displayed as a column of partial derivatives. Draw a downhill arrow on a simple parabola-shaped cost curve to the right, labeled 'gradient descent step', connecting the computed derivatives to the act of minimizing cost.",
+        "source_ref": "59a878dc11",
+        "duration_sec": 15
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": false,
+        "confidence": 0.75,
+        "reason": "The span (df7eaa5449) mentions that in the single-neuron-per-layer case things are simple and that adding multiple neurons per layer introduces 'a few more indices to keep track of', but it does not explicitly describe the single-path product of derivatives versus a sum of products over multiple paths. The claim about 'multiple paths and therefore a sum of such products' is not stated or clearly implied by this span."
+      },
+      {
+        "scene_id": 2,
+        "grounded": false,
+        "confidence": 0.8,
+        "reason": "The span (df7eaa5449) does not discuss a neuron feeding into multiple downstream neurons, the concept of a nudge propagating through multiple downstream connections simultaneously, or each path contributing an independent additive effect. The span only briefly notes that multiple neurons add indices to track, without explaining the mechanism of simultaneous influence through multiple paths."
+      },
+      {
+        "scene_id": 3,
+        "grounded": false,
+        "confidence": 0.8,
+        "reason": "The span (2cf36b3006) discusses the multi-neuron case and notes that chain-rule derivative expressions look essentially the same as the one-neuron case, but it does not describe summing partial derivatives along each path from a neuron to the cost, nor does it present the summation formula shown in the visual goal. The multivariable chain rule summation over paths is not stated or implied by this span."
+      },
+      {
+        "scene_id": 4,
+        "grounded": true,
+        "confidence": 0.95,
+        "reason": "The span (59a878dc11) directly states: 'These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill.' This directly supports the claim."
+      }
+    ],
+    "retry_count": 0
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "In the single-neuron-per-layer case the chain rule is applied straightforwardly backwards through the network; when layers have multiple neurons, the same chain rule idea still applies but requires keeping track of a few more indices.",
+      "visual_goal": "Show a vertical chain of three circles (neurons), each connected by a single arrow. Label the arrows with derivative symbols (dz/dw, da/dz, dC/da). Highlight the single path in yellow and display the product of derivatives as a text label beneath the chain. Then fade in a second and third neuron in the middle layer, drawing new arrows, and add index subscripts to the labels to show the added bookkeeping.",
+      "source_ref": "df7eaa5449",
+      "duration_sec": 22
+    },
+    {
+      "scene_id": 2,
+      "claim": "When layers have multiple neurons, the equations describing how sensitive the cost is to a specific weight look essentially the same as in the one-neuron-per-layer case, just with more indices to track.",
+      "visual_goal": "Side-by-side comparison: on the left, the simple single-neuron chain with one derivative product equation; on the right, a small network with two neurons in the middle layer, showing the analogous equations with subscript indices added. Highlight matching structural parts in the same color on both sides to emphasize the parallel. Add a text label: 'Same structure, more indices'.",
+      "source_ref": "2cf36b3006",
+      "duration_sec": 22
+    },
+    {
+      "scene_id": 3,
+      "claim": "When a neuron feeds into multiple downstream neurons, its influence on the cost travels through every downstream connection, and the multivariable chain rule accounts for this by summing the contributions along each path, because the total change in cost is the sum of changes caused through each downstream neuron.",
+      "visual_goal": "Show a single source neuron on the left with three arrows fanning out to three downstream neurons, each arrow in a distinct color (red, blue, green). Animate a pulsing nudge on the source neuron, then light up each colored arrow in sequence. On the right, build up the equation dC/da = (dC/da_1)(da_1/da) + (dC/da_2)(da_2/da) + (dC/da_3)(da_3/da) term by term, highlighting the matching colored path as each term appears. Draw a brace under all terms labeled 'sum over all paths'.",
+      "source_ref": "2cf36b3006",
+      "duration_sec": 26
+    },
+    {
+      "scene_id": 4,
+      "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network.",
+      "visual_goal": "Zoom out to show the full network diagram with all paths. Collect all the summed path expressions into a single gradient vector displayed as a column of partial derivatives. Draw a downhill arrow on a simple parabola-shaped cost curve to the right, labeled 'gradient descent step', connecting the computed derivatives to the act of minimizing cost.",
+      "source_ref": "59a878dc11",
+      "duration_sec": 15
+    }
+  ]
+}

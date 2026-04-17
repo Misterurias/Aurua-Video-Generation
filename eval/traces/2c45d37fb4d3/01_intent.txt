@@ -1,0 +1,103 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-16 17:09:31
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+I don't really get backpropagation.
+
+Retrieved source spans:
+[
+  {
+    "span_id": "f9daf4da1c",
+    "text": "The hard assumption here is that you've watched part 3, giving an intuitive walkthrough of the backpropagation algorithm. Here we get a little more formal and dive into the relevant calculus. It's normal for this to be at least a little confusing, so the mantra to regularly pause and ponder certainly applies as much here as anywhere else. Our main goal is to show how people in machine learning commonly think about the chain rule from calculus in the context",
+    "location": "3b1b_ch4.txt:L1-L7",
+    "retrieval_score": 0.6842
+  },
+  {
+    "span_id": "924702e6a8",
+    "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost",
+    "location": "3b1b_ch4.txt:L121-L128",
+    "retrieval_score": 0.5432
+  },
+  {
+    "span_id": "5f2968058a",
+    "text": "the bias, for example, is almost identical. We just need to change out this del z del w term for a del z del b. And if you look at the relevant formula, that derivative comes out to be 1. Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+    "location": "3b1b_ch4.txt:L79-L85",
+    "retrieval_score": 0.4561
+  },
+  {
+    "span_id": "59a878dc11",
+    "text": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes time for your mind to digest it all.",
+    "location": "3b1b_ch4.txt:L127-L130",
+    "retrieval_score": 0.4466
+  },
+  {
+    "span_id": "df7eaa5449",
+    "text": "keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give the layers multiple neurons, really it's just a few more indices to keep track of. Rather than the activation of",
+    "location": "3b1b_ch4.txt:L88-L94",
+    "retrieval_score": 0.4338
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "vague",
+  "learning_goal": "Clarify which specific aspect of backpropagation the student is confused about so a focused explainer can be planned.",
+  "relevant_spans": [],
+  "key_claims_to_explain": [],
+  "clarification_question": "Which part of backpropagation is tripping you up — the big-picture idea of how errors flow backwards through the network, or the actual math (chain rule and derivatives) used to compute the gradients?"
+}

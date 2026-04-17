@@ -1,0 +1,103 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-16 17:30:41
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+What does the loss landscape look like in higher dimensions?
+
+Retrieved source spans:
+[
+  {
+    "span_id": "6747ee8790",
+    "text": "where it is, so let's call the weight of the edge connecting this kth neuron to the jth neuron, w(L)_jk. Those indices might feel a little backwards at first, but it lines up with how you'd index the weight matrix I talked about in the part 1 video. Just as before, it's still nice to give a name to the relevant weighted sum, like z, so that the activation of the last layer is just your special function, like the",
+    "location": "3b1b_ch4.txt:L101-L107",
+    "retrieval_score": 0.1981
+  },
+  {
+    "span_id": "3a8619aa6d",
+    "text": "screen right now, there's a lot of symbols, and take a moment to make sure it's clear what they all are, because now we're going to compute the relevant derivatives. The derivative of C with respect to a(L) works out to be 2(a(L)-y). Notice this means its size is proportional to the difference between the network's output and the thing we want it to be, so if that output was very different, even slight changes stand to have a big",
+    "location": "3b1b_ch4.txt:L54-L60",
+    "retrieval_score": 0.1904
+  },
+  {
+    "span_id": "3c4efe5bc3",
+    "text": "case comes out to be a(L-1). Now I don't know about you, but I think it's easy to get stuck head down in the formulas without taking a moment to sit back and remind yourself of what they all mean. In the case of this last derivative, the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in. And all of",
+    "location": "3b1b_ch4.txt:L63-L69",
+    "retrieval_score": 0.1866
+  },
+  {
+    "span_id": "2cbe659de4",
+    "text": "ratio. Conceptually, this tiny nudge to w(L) causes some nudge to z(L), which in turn causes some nudge to a(L), which directly influences the cost. So we break things up by first looking at the ratio of a tiny change to z(L) to this tiny change w(L), that is, the derivative of z(L) with respect to w(L). Likewise, you then consider the ratio of the change to a(L) to the tiny change in z(L) that caused it, as well as",
+    "location": "3b1b_ch4.txt:L44-L50",
+    "retrieval_score": 0.1848
+  },
+  {
+    "span_id": "349677eae5",
+    "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is almost identical. We just need to change out this del z del w term for",
+    "location": "3b1b_ch4.txt:L73-L80",
+    "retrieval_score": 0.1709
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "vague",
+  "learning_goal": "Clarify what specific aspect of the high-dimensional loss landscape the student wants to understand.",
+  "relevant_spans": [],
+  "key_claims_to_explain": [],
+  "clarification_question": "Are you asking about how we visualize or think about the loss landscape when there are millions of weights (e.g., saddle points, local minima, flatness), or are you asking about how gradient descent navigates that high-dimensional space during training?"
+}
