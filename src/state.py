@@ -130,6 +130,7 @@ class RunState(BaseModel):
     scene_plan: Optional[ScenePlan] = None
     verification_history: list[VerificationResult] = Field(default_factory=list)
     animation_code: dict[int, str] = Field(default_factory=dict)  # scene_id -> code
+    scene_video_paths: dict[int, str] = Field(default_factory=dict)  # scene_id -> mp4 path
     narration_script: Optional[str] = None
 
     # Bookkeeping

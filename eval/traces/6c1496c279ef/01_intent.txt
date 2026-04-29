@@ -1,0 +1,175 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-29 01:13:47
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+What's the relationship between the cost function and the network's weights and biases?
+
+Retrieved source spans (top 10 after query expansion + dedup):
+[
+  {
+    "span_id": "01351e13bb",
+    "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+    "location": "3b1b_ch4.txt:L75-L79",
+    "retrieval_score": 0.7037
+  },
+  {
+    "span_id": "448484cf9c",
+    "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+    "location": "3b1b_ch4.txt:L12-L15",
+    "retrieval_score": 0.6995
+  },
+  {
+    "span_id": "35508033cf",
+    "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+    "location": "3b1b_ch4.txt:L88-L90",
+    "retrieval_score": 0.6386
+  },
+  {
+    "span_id": "03372a87c4",
+    "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of",
+    "location": "3b1b_ch4.txt:L121-L125",
+    "retrieval_score": 0.5928
+  },
+  {
+    "span_id": "4510ebfb14",
+    "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+    "location": "3b1b_ch4.txt:L14-L17",
+    "retrieval_score": 0.589
+  },
+  {
+    "span_id": "9bdcb2cd4b",
+    "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+    "location": "3b1b_ch4.txt:L22-L25",
+    "retrieval_score": 0.5854
+  },
+  {
+    "span_id": "0b4ea9579c",
+    "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+    "location": "3b1b_ch4.txt:L73-L77",
+    "retrieval_score": 0.5848
+  },
+  {
+    "span_id": "5cc48e0882",
+    "text": "And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you to pause and think about each of those terms if you want. What does change",
+    "location": "3b1b_ch4.txt:L110-L113",
+    "retrieval_score": 0.5716
+  },
+  {
+    "span_id": "92c56f06b1",
+    "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+    "location": "3b1b_ch4.txt:L68-L72",
+    "retrieval_score": 0.56
+  },
+  {
+    "span_id": "3df09dee0c",
+    "text": "and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give",
+    "location": "3b1b_ch4.txt:L123-L127",
+    "retrieval_score": 0.557
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Teach the student that the cost function measures network error as a function of all weights and biases, and that training works by computing how sensitive the cost is to each weight and bias (via partial derivatives) in order to adjust them toward lower error.",
+  "relevant_spans": [
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.6995
+    },
+    {
+      "span_id": "4510ebfb14",
+      "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+      "location": "3b1b_ch4.txt:L14-L17",
+      "retrieval_score": 0.589
+    },
+    {
+      "span_id": "9bdcb2cd4b",
+      "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+      "location": "3b1b_ch4.txt:L22-L25",
+      "retrieval_score": 0.5854
+    },
+    {
+      "span_id": "0b4ea9579c",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+      "location": "3b1b_ch4.txt:L73-L77",
+      "retrieval_score": 0.5848
+    },
+    {
+      "span_id": "01351e13bb",
+      "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+      "location": "3b1b_ch4.txt:L75-L79",
+      "retrieval_score": 0.7037
+    },
+    {
+      "span_id": "92c56f06b1",
+      "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+      "location": "3b1b_ch4.txt:L68-L72",
+      "retrieval_score": 0.56
+    }
+  ],
+  "key_claims_to_explain": [
+    "The cost function takes the network's weights and biases as its inputs and outputs a measure of how wrong the network's predictions are (e.g., squared difference between output activation and desired value).",
+    "The full cost is the average of per-example costs across all training examples, making it a function of every weight and bias in the network.",
+    "Training requires computing the partial derivative of the cost with respect to each weight and bias to determine how sensitive the cost is to each parameter.",
+    "These partial derivatives together form the gradient vector, which points in the direction of steepest increase in cost, so adjusting weights and biases opposite to the gradient decreases the cost most efficiently."
+  ],
+  "clarification_question": null
+}

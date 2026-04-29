@@ -69,7 +69,22 @@ def run_pipeline(
         #   VERIFIED                  — success
         #   VERIFICATION_EXHAUSTED    — retries used, some claims still ungrounded
         #   CLARIFICATION_REQUIRED    — handled above, unreachable here
+        
+        # --- Phase 3: Animation Coder + Renderer ---
+        # Only run rendering if verification passed cleanly.
+        if state.status == RunStatus.VERIFIED:
+            from .agents.animation_coder import run_animation_coder
+            from .tools.renderer import render_all_scenes, concatenate_videos
 
+            state = run_animation_coder(state)
+
+            if state.status == RunStatus.CODE_COMPLETE:
+                state = render_all_scenes(state, quality="low")
+                if state.status == RunStatus.RENDERED:
+                    final = concatenate_videos(state)
+                    if final:
+                        print(f"\n[run] final silent video: {final}")
+                        
     except Exception as exc:  # noqa: BLE001
         state.status = RunStatus.FAILED
         state.error = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"

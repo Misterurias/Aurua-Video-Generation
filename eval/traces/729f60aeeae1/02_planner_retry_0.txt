@@ -1,0 +1,185 @@
+
+======================================================================
+TRACE: 02_planner_retry_0  @  2026-04-28 22:48:35
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Explain that the gradient of the cost function is a vector of partial derivatives with respect to each weight and bias, and that its direction and magnitude tell us which weights have the most influence on the cost and how to adjust them to decrease it most efficiently.",
+  "relevant_spans": [
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.6118
+    },
+    {
+      "span_id": "4510ebfb14",
+      "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+      "location": "3b1b_ch4.txt:L14-L17",
+      "retrieval_score": 0.5874
+    },
+    {
+      "span_id": "0b4ea9579c",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+      "location": "3b1b_ch4.txt:L73-L77",
+      "retrieval_score": 0.6566
+    },
+    {
+      "span_id": "2ebe998091",
+      "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+      "location": "3b1b_ch4.txt:L37-L40",
+      "retrieval_score": 0.6667
+    },
+    {
+      "span_id": "81f31938c0",
+      "text": "head down in the formulas without taking a moment to sit back and remind yourself of what they all mean. In the case of this last derivative, the amount that the small nudge to the weight influenced the last layer",
+      "location": "3b1b_ch4.txt:L64-L67",
+      "retrieval_score": 0.566
+    }
+  ],
+  "key_claims_to_explain": [
+    "The gradient of the cost function is a vector made up of the partial derivatives of the cost with respect to every weight and bias in the network.",
+    "Each partial derivative measures how sensitive the cost function is to a small change in one specific weight \u2014 i.e., how much nudging that weight moves the cost up or down.",
+    "The sign of a partial derivative tells us which direction to adjust a weight (increase or decrease it) to reduce the cost, and the magnitude tells us which weights have the largest effect.",
+    "By following the negative gradient \u2014 adjusting all weights in the direction that most decreases the cost \u2014 the network learns most efficiently."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient of the cost function is a vector made up of the partial derivatives of the cost with respect to every weight and bias in the network.",
+        "visual_goal": "Show a small neural network diagram with labeled weights (w1, w2, w3) and biases (b1, b2, b3). Fade in a column vector on the right side of the screen labeled 'gradient' with entries \u2202C/\u2202w1, \u2202C/\u2202w2, \u2202C/\u2202w3, \u2202C/\u2202b1, \u2202C/\u2202b2, \u2202C/\u2202b3. Draw arrows from each weight/bias label in the network to its corresponding row in the vector to show the one-to-one correspondence.",
+        "source_ref": "0b4ea9579c",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "Each partial derivative measures how sensitive the cost function is to a small change in one specific weight \u2014 i.e., how much nudging that weight moves the cost up or down.",
+        "visual_goal": "Zoom in on a single weight w(L) and its number line. Show a small rightward nudge (delta w) on the number line, then animate an arrow pointing to a separate cost axis showing the resulting small change in cost (delta C). Label the ratio delta-C / delta-w as the partial derivative. Use color highlight on w(L) in the network diagram to keep context clear.",
+        "source_ref": "2ebe998091",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "The sign of a partial derivative tells us which direction to adjust a weight (increase or decrease it) to reduce the cost, and the magnitude tells us which weights have the largest effect.",
+        "visual_goal": "Display a horizontal bar chart where each bar represents one partial derivative (\u2202C/\u2202w1 through \u2202C/\u2202b3). Bars extending right are positive (red), bars extending left are negative (blue). Annotate: a large positive bar means 'decrease this weight to lower cost'; a large negative bar means 'increase this weight'. Highlight the tallest bar to illustrate 'largest influence'. Add a small legend explaining sign \u2192 direction, length \u2192 magnitude.",
+        "source_ref": "4510ebfb14",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "By following the negative gradient \u2014 adjusting all weights in the direction that most decreases the cost \u2014 the network learns most efficiently.",
+        "visual_goal": "Show a simple 2D bowl-shaped cost surface (drawn as concentric ellipses representing contour lines) with a dot representing current weights. Draw the gradient vector as an arrow pointing uphill (away from the minimum). Then draw the negative gradient arrow pointing downhill toward the minimum. Animate the dot stepping along the negative gradient direction in two or three steps, each time the dot moving closer to the center of the bowl. Label the step 'w \u2190 w \u2212 \u03b7\u00b7\u2207C'.",
+        "source_ref": "448484cf9c",
+        "duration_sec": 25
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": true,
+        "confidence": 0.82,
+        "reason": null
+      },
+      {
+        "scene_id": 2,
+        "grounded": true,
+        "confidence": 0.75,
+        "reason": null
+      },
+      {
+        "scene_id": 3,
+        "grounded": false,
+        "confidence": 0.85,
+        "reason": "Span 4510ebfb14 mentions knowing 'which adjustments to those terms will cause the most efficient decrease to the cost function' but does not discuss the sign of a partial derivative indicating direction (increase vs. decrease a weight) or the magnitude indicating relative influence. The claim about sign and magnitude interpretation is not supported by this span."
+      },
+      {
+        "scene_id": 4,
+        "grounded": false,
+        "confidence": 0.88,
+        "reason": "Span 448484cf9c discusses sensitivity of the cost function to weights and biases in a small network, but does not mention following the negative gradient, gradient descent, the update rule w \u2190 w \u2212 \u03b7\u00b7\u2207C, or the concept of moving downhill on a cost surface. The core claim about gradient descent and learning most efficiently is absent from this span."
+      }
+    ],
+    "retry_count": 0
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The gradient of the cost function is a vector made up of the partial derivatives of the cost with respect to every weight and bias in the network.",
+      "visual_goal": "Show a small neural network diagram with labeled weights (w1, w2, w3) and biases (b1, b2, b3). Fade in a column vector on the right side of the screen labeled 'gradient' with entries ∂C/∂w1, ∂C/∂w2, ∂C/∂w3, ∂C/∂b1, ∂C/∂b2, ∂C/∂b3. Draw arrows from each weight/bias label in the network to its corresponding row in the vector to show the one-to-one correspondence.",
+      "source_ref": "0b4ea9579c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "Each partial derivative measures how sensitive the cost function is to a small change in one specific weight — i.e., how much nudging that weight moves the cost up or down.",
+      "visual_goal": "Zoom in on a single weight w(L) and its number line. Show a small rightward nudge (delta w) on the number line, then animate an arrow pointing to a separate cost axis showing the resulting small change in cost (delta C). Label the ratio delta-C / delta-w as the partial derivative. Use color highlight on w(L) in the network diagram to keep context clear.",
+      "source_ref": "2ebe998091",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "The gradient vector is built from partial derivatives of the cost with respect to all weights and biases, and knowing these tells us which adjustments will cause the most efficient decrease to the cost function.",
+      "visual_goal": "Display the gradient vector from scene 1 again. Animate each entry lighting up one at a time with a small bar beside it showing its value. Annotate that a large entry means that weight has a large influence on the cost. Add text: 'Larger partial derivative → bigger effect on cost → higher priority to adjust.' Keep the neural network diagram visible in the corner for context.",
+      "source_ref": "0b4ea9579c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "Knowing how sensitive the cost function is to each weight and bias tells us which adjustments to those terms will cause the most efficient decrease to the cost function.",
+      "visual_goal": "Show a simple 2D bowl-shaped cost surface drawn as concentric ellipses (contour lines) with a dot representing current weights. Draw an arrow from the dot labeled 'gradient direction' pointing away from the minimum (uphill). Then draw a second arrow in the opposite direction labeled 'negative gradient — most efficient decrease'. Animate the dot stepping along the negative gradient in two or three steps toward the center. Label the update step 'w ← w − η·∇C' at the bottom of the screen.",
+      "source_ref": "4510ebfb14",
+      "duration_sec": 25
+    }
+  ]
+}

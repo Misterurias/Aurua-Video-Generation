@@ -1,0 +1,30 @@
+
+======================================================================
+TRACE: 00_query_expansion  @  2026-04-28 22:42:43
+======================================================================
+
+--- SYSTEM ---
+You are a query expansion assistant for a retrieval system.
+
+Given a student's question about a technical topic, generate paraphrased
+variants that capture different ways the same question might be asked. Use
+technical synonyms, alternative phrasings, and rephrase from different angles
+(definition, mechanism, justification, example).
+
+Return ONLY a JSON object with this exact schema:
+{"variants": ["variant 1", "variant 2", "variant 3"]}
+
+Rules:
+- Generate exactly the number of variants requested.
+- Each variant must be a complete question, not a phrase.
+- Each variant must be semantically equivalent to the original — no new topics.
+- Vary vocabulary aggressively. If the original uses "derivative", a variant might use "rate of change" or "sensitivity".
+
+
+--- USER ---
+Original question: Why is the derivative of the cost with respect to a weight proportional to the activation feeding into it?
+
+Generate exactly 3 paraphrased variants.
+
+--- RESPONSE ---
+{"variants": ["Why does the gradient of the loss function with respect to a synaptic weight scale proportionally with the activation of the upstream neuron connected to it?", "What is the reason that the rate of change of the error with respect to a connection weight depends linearly on the input signal flowing into that weight?", "Why is the sensitivity of the cost function to a particular weight determined by the magnitude of the activation that feeds forward through that weight?"]}

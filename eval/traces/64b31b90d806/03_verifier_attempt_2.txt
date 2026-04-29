@@ -1,0 +1,156 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_2  @  2026-04-29 01:11:47
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The goal of backpropagation is to understand how sensitive the cost function is to each weight and bias in the network, so we know which adjustments to make.",
+        "visual_goal": "Show a small neural network with 3 layers, one neuron each, with labeled weights (w1, w2, w3) and biases (b1, b2, b3). Highlight the cost function value as a single number at the output. Use question-mark labels near each weight and bias with a text overlay: 'How sensitive is the cost to each of these variables?'",
+        "source_ref": "448484cf9c",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The chain rule expressions in backpropagation give the derivatives that determine each component of the gradient, and propagating backwards means tracing how sensitive the cost is to the activation of the previous layer.",
+        "visual_goal": "Animate the same 3-layer network. Starting at the output neuron, show a red 'sensitivity' arrow flowing backwards through each connection toward the input. At each edge, display a small text label 'chain rule expression'. Highlight each layer in sequence from right to left as the arrow passes through it, with a text overlay: 'How sensitive is cost to this activation?'",
+        "source_ref": "59101efa19",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 3,
+        "claim": "Once you know how sensitive the cost is to a layer's activations, you can reuse that same calculation to find sensitivities for all weights and biases feeding into that layer.",
+        "visual_goal": "Zoom into one layer transition. Show the activation node glowing after its sensitivity is computed. Then branch arrows from that node to the incoming weight and bias labels, each inheriting the same sensitivity value via multiplication. Use color-coded arrows (same color = reused quantity) to emphasize the reuse.",
+        "source_ref": "03372a87c4",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "You can keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases.",
+        "visual_goal": "Show the 3-layer network again. Animate a step-by-step backwards pass: at each layer, highlight the weights and biases in turn as sensitivity arrows arrive from the right. Use a repeating visual motif (same arrow style, same color) at each layer to emphasize that the same chain rule step is being repeated. End with all weights and biases highlighted and a text label: 'Gradient assembled \u2014 ready to update all parameters.'",
+        "source_ref": "35508033cf",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.6682
+    },
+    {
+      "span_id": "3df09dee0c",
+      "text": "and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give",
+      "location": "3b1b_ch4.txt:L123-L127",
+      "retrieval_score": 0.6582
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5192
+    },
+    {
+      "span_id": "35508033cf",
+      "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+      "location": "3b1b_ch4.txt:L88-L90",
+      "retrieval_score": 0.5131
+    },
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.5722
+    },
+    {
+      "span_id": "03372a87c4",
+      "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of",
+      "location": "3b1b_ch4.txt:L121-L125",
+      "retrieval_score": 0.5128
+    }
+  ],
+  "retry_count": 2
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.95,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": false,
+      "confidence": 0.82,
+      "reason": "The cited span (59101efa19) states that chain rule expressions give derivatives that determine each gradient component, but does not mention propagating backwards or tracing sensitivity to the previous layer's activation. That specific idea ('propagating backwards' and sensitivity to the previous layer's activation) appears in span a7895247a2, which is not cited here."
+    },
+    {
+      "scene_id": 3,
+      "grounded": true,
+      "confidence": 0.85,
+      "reason": null
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.95,
+      "reason": null
+    }
+  ],
+  "retry_count": 2
+}

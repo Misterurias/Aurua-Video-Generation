@@ -1,0 +1,160 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_02  @  2026-04-28 23:05:59
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 2
+claim: The negative gradient points in the direction that most efficiently decreases the cost, telling you how to adjust all weights and biases simultaneously.
+visual_goal: Show a simple 2D cost surface as a curved bowl (drawn with a parabola-like arc and contour lines as ellipses). Place a dot representing current parameters. Draw a red arrow labeled 'gradient' pointing uphill, then a green arrow labeled '-gradient' pointing downhill toward the minimum. Add a text label: 'steepest descent'. Animate the dot moving along the green arrow.
+duration_sec: 22
+
+Class name: Scene02
+Output file will be: scene_02.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene02(Scene):
+    def construct(self):
+        title = Text("Negative Gradient: Steepest Descent", font_size=34, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.8)
+
+        # Cost surface as nested ellipses (contour lines of a bowl)
+        center = LEFT * 2.5 + DOWN * 0.5
+        contours = VGroup(
+            Ellipse(width=7.0, height=4.0, color=BLUE_E, stroke_opacity=0.6),
+            Ellipse(width=5.5, height=3.1, color=BLUE_D, stroke_opacity=0.7),
+            Ellipse(width=4.0, height=2.3, color=BLUE, stroke_opacity=0.8),
+            Ellipse(width=2.6, height=1.5, color=BLUE_B, stroke_opacity=0.9),
+            Ellipse(width=1.2, height=0.7, color=TEAL, stroke_opacity=1.0),
+        )
+        for c in contours:
+            c.move_to(center)
+
+        self.play(LaggedStart(*[Create(c) for c in contours], lag_ratio=0.15))
+        self.wait(0.5)
+
+        # Minimum marker
+        minimum = Dot(center, color=YELLOW, radius=0.08)
+        min_label = Text("minimum", font_size=20, color=YELLOW).next_to(minimum, DOWN, buff=0.15)
+        self.play(FadeIn(minimum), FadeIn(min_label))
+        self.wait(0.5)
+
+        # Current parameters dot (on outer contour, upper right)
+        current_pos = center + RIGHT * 2.6 + UP * 1.1
+        param_dot = Dot(current_pos, color=WHITE, radius=0.11)
+        param_label = Text("current params", font_size=20, color=WHITE).next_to(param_dot, UP, buff=0.15)
+        self.play(FadeIn(param_dot), Write(param_label))
+        self.wait(0.8)
+
+        # Gradient arrow (uphill, away from center)
+        direction = (current_pos - center)
+        direction_unit = direction / ((direction[0]**2 + direction[1]**2)**0.5)
+        grad_end = current_pos + direction_unit * 1.5
+        grad_arrow = Arrow(current_pos, grad_end, color=RED, buff=0, stroke_width=6)
+        grad_text = Text("gradient", font_size=22, color=RED).next_to(grad_arrow.get_end(), UR, buff=0.1)
+        self.play(GrowArrow(grad_arrow), Write(grad_text))
+        self.wait(1.2)
+
+        # Negative gradient arrow (downhill, toward center)
+        neg_end = current_pos - direction_unit * 1.5
+        neg_arrow = Arrow(current_pos, neg_end, color=GREEN, buff=0, stroke_width=6)
+        neg_text = Text("−gradient", font_size=22, color=GREEN).next_to(neg_arrow.get_end(), DL, buff=0.1)
+        self.play(GrowArrow(neg_arrow), Write(neg_text))
+        self.wait(1.0)
+
+        # Steepest descent label
+        steepest = Text("steepest descent", font_size=28, color=GREEN, weight=BOLD)
+        steepest.to_edge(RIGHT).shift(UP * 1.5 + LEFT * 0.3)
+        self.play(FadeIn(steepest))
+        self.wait(1.2)
+
+        # Animate the dot moving along the green arrow toward the minimum
+        self.play(FadeOut(param_label))
+        step1 = current_pos - direction_unit * 1.4
+        step2 = center + direction_unit * 0.4
+        step3 = center
+
+        self.play(param_dot.animate.move_to(step1), run_time=1.2)
+        self.wait(0.3)
+        self.play(param_dot.animate.move_to(step2), run_time=1.0)
+        self.wait(0.3)
+        self.play(param_dot.animate.move_to(step3), run_time=0.9)
+        self.play(Indicate(param_dot, color=YELLOW, scale_factor=1.6))
+        self.wait(1.5)
+
+        self.play(
+            FadeOut(VGroup(title, contours, minimum, min_label, param_dot,
+                           grad_arrow, grad_text, neg_arrow, neg_text, steepest))
+        )
+        self.wait(0.3)

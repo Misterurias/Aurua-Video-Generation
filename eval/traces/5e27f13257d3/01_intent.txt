@@ -1,0 +1,163 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-29 01:16:09
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+Why do we use a cost function instead of just measuring how many examples the network gets right?
+
+Retrieved source spans (top 10 after query expansion + dedup):
+[
+  {
+    "span_id": "4510ebfb14",
+    "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+    "location": "3b1b_ch4.txt:L14-L17",
+    "retrieval_score": 0.6233
+  },
+  {
+    "span_id": "448484cf9c",
+    "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+    "location": "3b1b_ch4.txt:L12-L15",
+    "retrieval_score": 0.6148
+  },
+  {
+    "span_id": "35508033cf",
+    "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+    "location": "3b1b_ch4.txt:L88-L90",
+    "retrieval_score": 0.6065
+  },
+  {
+    "span_id": "c3d30ee6d4",
+    "text": "that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes",
+    "location": "3b1b_ch4.txt:L128-L130",
+    "retrieval_score": 0.5857
+  },
+  {
+    "span_id": "01351e13bb",
+    "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+    "location": "3b1b_ch4.txt:L75-L79",
+    "retrieval_score": 0.5495
+  },
+  {
+    "span_id": "2ebe998091",
+    "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+    "location": "3b1b_ch4.txt:L37-L40",
+    "retrieval_score": 0.5382
+  },
+  {
+    "span_id": "9bdcb2cd4b",
+    "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+    "location": "3b1b_ch4.txt:L22-L25",
+    "retrieval_score": 0.5356
+  },
+  {
+    "span_id": "92c56f06b1",
+    "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+    "location": "3b1b_ch4.txt:L68-L72",
+    "retrieval_score": 0.5241
+  },
+  {
+    "span_id": "5d0b154bb4",
+    "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+    "location": "3b1b_ch4.txt:L108-L111",
+    "retrieval_score": 0.5035
+  },
+  {
+    "span_id": "10178de6ac",
+    "text": "a(L)1, which also plays a role in the cost function, and you have to add those up. And that, well, that's pretty much it. Once you know how sensitive the cost function is to the activations in this second-to-last layer,",
+    "location": "3b1b_ch4.txt:L118-L122",
+    "retrieval_score": 0.4964
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Explain why a smooth, continuous cost function (like mean squared error) is necessary for gradient-based learning, whereas raw accuracy is too coarse to guide weight updates.",
+  "relevant_spans": [
+    {
+      "span_id": "9bdcb2cd4b",
+      "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+      "location": "3b1b_ch4.txt:L22-L25",
+      "retrieval_score": 0.5356
+    },
+    {
+      "span_id": "2ebe998091",
+      "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+      "location": "3b1b_ch4.txt:L37-L40",
+      "retrieval_score": 0.5382
+    },
+    {
+      "span_id": "c3d30ee6d4",
+      "text": "that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes",
+      "location": "3b1b_ch4.txt:L128-L130",
+      "retrieval_score": 0.5857
+    },
+    {
+      "span_id": "92c56f06b1",
+      "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+      "location": "3b1b_ch4.txt:L68-L72",
+      "retrieval_score": 0.5241
+    }
+  ],
+  "key_claims_to_explain": [
+    "Raw accuracy (number of correct predictions) is a discontinuous, step-like measure that has zero gradient almost everywhere, giving the network no signal about which direction to adjust its weights.",
+    "A cost function like mean squared error — computed as (output activation − desired value)² — produces a smooth, continuous surface whose gradient tells the network how much and in which direction each weight should change.",
+    "Gradient descent works by repeatedly stepping in the direction that decreases the cost function; this requires the cost to be differentiable with respect to the weights and biases.",
+    "Averaging the cost over all training examples gives a single scalar that reflects overall performance, and its gradient guides weight updates that improve the network across the whole dataset."
+  ],
+  "clarification_question": null
+}

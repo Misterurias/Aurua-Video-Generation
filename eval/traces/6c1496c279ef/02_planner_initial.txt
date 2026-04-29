@@ -1,0 +1,129 @@
+
+======================================================================
+TRACE: 02_planner_initial  @  2026-04-29 01:14:00
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Plan an explainer for the following:
+
+{
+  "learning_goal": "Teach the student that the cost function measures network error as a function of all weights and biases, and that training works by computing how sensitive the cost is to each weight and bias (via partial derivatives) in order to adjust them toward lower error.",
+  "relevant_spans": [
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.6995
+    },
+    {
+      "span_id": "4510ebfb14",
+      "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+      "location": "3b1b_ch4.txt:L14-L17",
+      "retrieval_score": 0.589
+    },
+    {
+      "span_id": "9bdcb2cd4b",
+      "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+      "location": "3b1b_ch4.txt:L22-L25",
+      "retrieval_score": 0.5854
+    },
+    {
+      "span_id": "0b4ea9579c",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+      "location": "3b1b_ch4.txt:L73-L77",
+      "retrieval_score": 0.5848
+    },
+    {
+      "span_id": "01351e13bb",
+      "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+      "location": "3b1b_ch4.txt:L75-L79",
+      "retrieval_score": 0.7037
+    },
+    {
+      "span_id": "92c56f06b1",
+      "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+      "location": "3b1b_ch4.txt:L68-L72",
+      "retrieval_score": 0.56
+    }
+  ],
+  "key_claims_to_explain": [
+    "The cost function takes the network's weights and biases as its inputs and outputs a measure of how wrong the network's predictions are (e.g., squared difference between output activation and desired value).",
+    "The full cost is the average of per-example costs across all training examples, making it a function of every weight and bias in the network.",
+    "Training requires computing the partial derivative of the cost with respect to each weight and bias to determine how sensitive the cost is to each parameter.",
+    "These partial derivatives together form the gradient vector, which points in the direction of steepest increase in cost, so adjusting weights and biases opposite to the gradient decreases the cost most efficiently."
+  ]
+}
+
+Return the JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The cost function takes the network's weights and biases as its inputs and outputs a measure of how wrong the network's predictions are (e.g., squared difference between output activation and desired value).",
+      "visual_goal": "Show a small neural network diagram (3 circles connected by labeled arrows for weights w and bias b). Highlight the output neuron's activation value 'a^L' in one color and the desired target value 'y' in another. Then animate the expression (a^L - y)^2 appearing beside them, with a brace or arrow indicating this is the cost for one example.",
+      "source_ref": "9bdcb2cd4b",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The full cost is the average of per-example costs across all training examples, making it a function of every weight and bias in the network.",
+      "visual_goal": "Show a row of small identical network icons, each labeled with a different training example. Animate each producing its own (a^L - y)^2 value, then funnel all those values into a summation symbol followed by division by n, producing a single 'C(w, b)' label. Emphasize with a text label that C depends on all weights and biases.",
+      "source_ref": "0b4ea9579c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "Training requires computing the partial derivative of the cost with respect to each weight and bias to determine how sensitive the cost is to each parameter.",
+      "visual_goal": "Display the cost function C as a labeled box. Draw arrows from the box back toward each weight and bias label (w1, w2, w3, b1, b2, b3), each arrow annotated with the partial derivative symbol ∂C/∂w or ∂C/∂b. Highlight one arrow (e.g., ∂C/∂w^L) in a bright color and show a small number appearing on it to represent 'how sensitive C is to that parameter'.",
+      "source_ref": "448484cf9c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "These partial derivatives together form the gradient vector, which points in the direction of steepest increase in cost, so adjusting weights and biases opposite to the gradient decreases the cost most efficiently.",
+      "visual_goal": "Show a simple 2D bowl-shaped cost surface (drawn as a curved arc or parabola in 2D) with a dot representing current parameter values. Draw an upward arrow labeled 'gradient ∇C' pointing toward higher cost, then draw a downward arrow labeled '-∇C' pointing toward the bowl's minimum. Animate the dot stepping in the -∇C direction toward the minimum, with a text label 'most efficient decrease in cost'.",
+      "source_ref": "4510ebfb14",
+      "duration_sec": 20
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "run_id": "tc6_2c72dedd",
+  "started_at": "2026-04-29T03:42:15.564787+00:00",
+  "test_case_id": "TC6",
+  "approach": "single_prompt_baseline",
+  "user_question": "Why is the derivative of the cost with respect to a weight proportional to the activation feeding into it?",
+  "source_path": "data/transcripts/3b1b_ch4.txt",
+  "system_prompt": "You are an educational video planner. Given a student's question and a source transcript, produce a scene-by-scene plan for a short animated explainer video (~60-90 seconds total).\n\nReturn JSON matching this schema exactly:\n\n{\n  \"scenes\": [\n    {\n      \"scene_id\": <int, starting from 1>,\n      \"claim\": \"<specific claim this scene teaches>\",\n      \"visual_goal\": \"<what the animation should show, in plain English>\",\n      \"source_quote\": \"<a direct quote from the transcript that supports this claim>\",\n      \"source_location\": \"<approximate line range in the transcript, e.g. 'L40-L50'>\",\n      \"duration_sec\": <int between 5 and 30>\n    }\n  ]\n}\n\nRules:\n1. Each scene teaches exactly one claim.\n2. Each claim must be supported by a specific quote from the source transcript.\n3. visual_goal must describe something renderable in Manim with basic primitives.\n4. Total duration 60-90 seconds, typically 3-5 scenes.\n5. Pedagogical flow: context first, then mechanism, then example.\n\nReturn only the JSON. No prose, no markdown fences.\n",
+  "user_prompt_length_chars": 9931,
+  "response_raw": "{\n  \"scenes\": [\n    {\n      \"scene_id\": 1,\n      \"claim\": \"The cost depends on the weight through a chain: w(L) \u2192 z(L) \u2192 a(L) \u2192 C.\",\n      \"visual_goal\": \"Show three small labeled boxes in a row: 'z^L = w^L \u00b7 a^(L-1) + b^L', then 'a^L = \u03c3(z^L)', then 'C = (a^L - y)\u00b2', connected by arrows. Highlight each box sequentially to show the dependency chain.\",\n      \"source_quote\": \"the weight, previous action and the bias all together are used to compute z, which in turn lets us compute a, which finally, along with a constant y, lets us compute the cost.\",\n      \"source_location\": \"L031-L033\",\n      \"duration_sec\": 18\n    },\n    {\n      \"scene_id\": 2,\n      \"claim\": \"By the chain rule, dC/dw(L) = (dz/dw) \u00b7 (da/dz) \u00b7 (dC/da), breaking the sensitivity into three multiplicative pieces.\",\n      \"visual_goal\": \"Display the chain rule equation dC/dw^L = (dz^L/dw^L) \u00b7 (da^L/dz^L) \u00b7 (dC/da^L) as three colored fraction terms multiplied together, with each fraction highlighted one at a time and labeled with its meaning.\",\n      \"source_quote\": \"This right here is the chain rule, where multiplying together these three ratios gives us the sensitivity of C to small changes in w(L).\",\n      \"source_location\": \"L052-L053\",\n      \"duration_sec\": 20\n    },\n    {\n      \"scene_id\": 3,\n      \"claim\": \"The derivative of z(L) with respect to w(L) equals a(L-1), the activation feeding into the weight.\",\n      \"visual_goal\": \"Show the formula z^L = w^L \u00b7 a^(L-1) + b^L. Then animate taking the derivative with respect to w^L, crossing out the bias term and showing dz^L/dw^L = a^(L-1) highlighted in a box.\",\n      \"source_quote\": \"And the derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).\",\n      \"source_location\": \"L063\",\n      \"duration_sec\": 18\n    },\n    {\n      \"scene_id\": 4,\n      \"claim\": \"This means the influence of a weight on the cost is proportional to the strength of the previous neuron's activation \u2014 neurons that fire together wire together.\",\n      \"visual_goal\": \"Show two neurons connected by a weighted edge. Animate the left neuron glowing brighter (large a^(L-1)) and display a large dC/dw value, then dim the left neuron (small a^(L-1)) and show a small dC/dw value, with the label 'neurons that fire together wire together' appearing.\",\n      \"source_quote\": \"the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in.\",\n      \"source_location\": \"L066-L068\",\n      \"duration_sec\": 20\n    }\n  ]\n}",
+  "response_parsed": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost depends on the weight through a chain: w(L) \u2192 z(L) \u2192 a(L) \u2192 C.",
+        "visual_goal": "Show three small labeled boxes in a row: 'z^L = w^L \u00b7 a^(L-1) + b^L', then 'a^L = \u03c3(z^L)', then 'C = (a^L - y)\u00b2', connected by arrows. Highlight each box sequentially to show the dependency chain.",
+        "source_quote": "the weight, previous action and the bias all together are used to compute z, which in turn lets us compute a, which finally, along with a constant y, lets us compute the cost.",
+        "source_location": "L031-L033",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 2,
+        "claim": "By the chain rule, dC/dw(L) = (dz/dw) \u00b7 (da/dz) \u00b7 (dC/da), breaking the sensitivity into three multiplicative pieces.",
+        "visual_goal": "Display the chain rule equation dC/dw^L = (dz^L/dw^L) \u00b7 (da^L/dz^L) \u00b7 (dC/da^L) as three colored fraction terms multiplied together, with each fraction highlighted one at a time and labeled with its meaning.",
+        "source_quote": "This right here is the chain rule, where multiplying together these three ratios gives us the sensitivity of C to small changes in w(L).",
+        "source_location": "L052-L053",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "The derivative of z(L) with respect to w(L) equals a(L-1), the activation feeding into the weight.",
+        "visual_goal": "Show the formula z^L = w^L \u00b7 a^(L-1) + b^L. Then animate taking the derivative with respect to w^L, crossing out the bias term and showing dz^L/dw^L = a^(L-1) highlighted in a box.",
+        "source_quote": "And the derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).",
+        "source_location": "L063",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 4,
+        "claim": "This means the influence of a weight on the cost is proportional to the strength of the previous neuron's activation \u2014 neurons that fire together wire together.",
+        "visual_goal": "Show two neurons connected by a weighted edge. Animate the left neuron glowing brighter (large a^(L-1)) and display a large dC/dw value, then dim the left neuron (small a^(L-1)) and show a small dC/dw value, with the label 'neurons that fire together wire together' appearing.",
+        "source_quote": "the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in.",
+        "source_location": "L066-L068",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "parse_error": null,
+  "cost": {
+    "input_tokens": 2906,
+    "output_tokens": 816,
+    "api_calls": 1,
+    "wall_clock_sec": 11.970473051071167
+  }
+}

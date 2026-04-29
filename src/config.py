@@ -39,9 +39,18 @@ TTS_MODEL = os.getenv("AURUA_TTS_MODEL", "tts-1")
 
 # --- Retrieval ---
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-CHUNK_SIZE_WORDS = 80
-CHUNK_OVERLAP_WORDS = 20
-TOP_K_RETRIEVAL = 5
+# CHUNK_SIZE_WORDS = 80
+# CHUNK_OVERLAP_WORDS = 20
+# TOP_K_RETRIEVAL = 5
+
+CHUNK_SIZE_WORDS = 40        # v0.3: was 80, smaller chunks improve coverage
+CHUNK_OVERLAP_WORDS = 15     # v0.3: was 20, proportional to new chunk size
+TOP_K_RETRIEVAL = 10         # v0.3: was 5, more candidates compensate for chunking gaps
+
+# Query expansion (v0.3): generate paraphrased variants of the user question
+# before retrieval, to address F1/F2 retrieval-coverage failures from Phase 2.
+ENABLE_QUERY_EXPANSION = True
+QUERY_EXPANSION_VARIANTS = 3
 
 # --- Pipeline control ---
 MAX_VERIFIER_RETRIES = 2

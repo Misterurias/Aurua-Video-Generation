@@ -1,0 +1,7 @@
+# This file is used internally by FFMPEG.
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/1584795214_1138707315_223132457.mp4'
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/4072820271_4203154820_301039598.mp4'
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/4072820271_1839128356_3711513681.mp4'
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/4072820271_4050031608_3694832482.mp4'
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/4072820271_1839128356_1897998910.mp4'
+file 'file:/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/media/videos/test_manim/480p15/partial_movie_files/HelloWorld/4072820271_1345727423_3072789054.mp4'

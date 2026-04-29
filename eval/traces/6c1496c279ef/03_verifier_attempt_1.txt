@@ -1,0 +1,156 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_1  @  2026-04-29 01:14:23
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost function takes the network's weights and biases as its inputs and outputs a measure of how wrong the network's predictions are (e.g., squared difference between output activation and desired value).",
+        "visual_goal": "Show a small neural network diagram (3 circles connected by labeled arrows for weights w and bias b). Highlight the output neuron's activation value 'a^L' in one color and the desired target value 'y' in another. Then animate the expression (a^L - y)^2 appearing beside them, with a brace or arrow indicating this is the cost for one example.",
+        "source_ref": "9bdcb2cd4b",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The full cost is the average of per-example costs across all training examples, making it a function of every weight and bias in the network.",
+        "visual_goal": "Show a row of small identical network icons, each labeled with a different training example. Animate each producing its own (a^L - y)^2 value, then funnel all those values into a summation symbol followed by division by n, producing a single 'C(w, b)' label. Emphasize with a text label that C depends on all weights and biases.",
+        "source_ref": "92c56f06b1",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "Training requires computing the partial derivative of the cost with respect to each weight and bias to determine how sensitive the cost is to each parameter.",
+        "visual_goal": "Display the cost function C as a labeled box. Draw arrows from the box back toward each weight and bias label (w1, w2, w3, b1, b2, b3), each arrow annotated with the partial derivative symbol \u2202C/\u2202w or \u2202C/\u2202b. Highlight one arrow (e.g., \u2202C/\u2202w^L) in a bright color and show a small number appearing on it to represent 'how sensitive C is to that parameter'.",
+        "source_ref": "448484cf9c",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "These partial derivatives together form the gradient vector, which is built up from the partial derivatives of the cost function with respect to all those weights and biases, and knowing them tells us which adjustments cause the most efficient decrease to the cost function.",
+        "visual_goal": "Show a column vector labeled '\u2207C' whose entries are \u2202C/\u2202w1, \u2202C/\u2202w2, ..., \u2202C/\u2202b1, ... assembled one by one from the arrows in the previous scene. Then show a simple 2D parabola representing the cost surface with a dot for current parameters. Draw an arrow labeled '\u2212\u2207C' pointing from the dot toward the minimum of the parabola, with a text label 'most efficient decrease in cost'.",
+        "source_ref": "01351e13bb",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.6995
+    },
+    {
+      "span_id": "4510ebfb14",
+      "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+      "location": "3b1b_ch4.txt:L14-L17",
+      "retrieval_score": 0.589
+    },
+    {
+      "span_id": "9bdcb2cd4b",
+      "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+      "location": "3b1b_ch4.txt:L22-L25",
+      "retrieval_score": 0.5854
+    },
+    {
+      "span_id": "0b4ea9579c",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+      "location": "3b1b_ch4.txt:L73-L77",
+      "retrieval_score": 0.5848
+    },
+    {
+      "span_id": "01351e13bb",
+      "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+      "location": "3b1b_ch4.txt:L75-L79",
+      "retrieval_score": 0.7037
+    },
+    {
+      "span_id": "92c56f06b1",
+      "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+      "location": "3b1b_ch4.txt:L68-L72",
+      "retrieval_score": 0.56
+    }
+  ],
+  "retry_count": 1
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": false,
+      "confidence": 0.8,
+      "reason": "The cited span (92c56f06b1) mentions 'averaging together all those costs across' training examples but is cut off and does not explicitly state that the full cost is the average of per-example costs or that it is a function of every weight and bias. The span only partially implies the averaging concept and does not complete the statement about the full cost function's dependence on all weights and biases."
+    },
+    {
+      "scene_id": 3,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 4,
+      "grounded": false,
+      "confidence": 0.82,
+      "reason": "The cited span (01351e13bb) discusses partial derivatives and mentions 'the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases' (from the adjacent span 0b4ea9579c, not 01351e13bb). Span 01351e13bb itself only says 'of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need...' — it does not contain the claim about knowing the gradient telling us 'which adjustments cause the most efficient decrease to the cost function.' That language appears in span 4510ebfb14, which is not cited. The cited span does not support the full claim."
+    }
+  ],
+  "retry_count": 1
+}

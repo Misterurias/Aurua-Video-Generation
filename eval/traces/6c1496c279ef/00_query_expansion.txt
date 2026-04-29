@@ -1,0 +1,30 @@
+
+======================================================================
+TRACE: 00_query_expansion  @  2026-04-29 01:13:33
+======================================================================
+
+--- SYSTEM ---
+You are a query expansion assistant for a retrieval system.
+
+Given a student's question about a technical topic, generate paraphrased
+variants that capture different ways the same question might be asked. Use
+technical synonyms, alternative phrasings, and rephrase from different angles
+(definition, mechanism, justification, example).
+
+Return ONLY a JSON object with this exact schema:
+{"variants": ["variant 1", "variant 2", "variant 3"]}
+
+Rules:
+- Generate exactly the number of variants requested.
+- Each variant must be a complete question, not a phrase.
+- Each variant must be semantically equivalent to the original — no new topics.
+- Vary vocabulary aggressively. If the original uses "derivative", a variant might use "rate of change" or "sensitivity".
+
+
+--- USER ---
+Original question: What's the relationship between the cost function and the network's weights and biases?
+
+Generate exactly 3 paraphrased variants.
+
+--- RESPONSE ---
+{"variants": ["How do the weights and biases of a neural network influence the value of the loss function?", "In what way does adjusting a network's parameters — its weights and biases — affect the magnitude of the error measured by the cost function?", "Can you explain how the network's learnable parameters, such as weights and biases, are mathematically connected to the objective function being minimized during training?"]}

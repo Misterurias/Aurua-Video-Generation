@@ -1,0 +1,179 @@
+
+======================================================================
+TRACE: 02_planner_retry_1  @  2026-04-29 01:16:54
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Explain why a smooth, continuous cost function (like mean squared error) is necessary for gradient-based learning, whereas raw accuracy is too coarse to guide weight updates.",
+  "relevant_spans": [
+    {
+      "span_id": "9bdcb2cd4b",
+      "text": "activation to be for a given training example is y, for example, y might be 0 or 1. So the cost of this network for a single training example is a^(L - y) squared. We'll denote the cost of that",
+      "location": "3b1b_ch4.txt:L22-L25",
+      "retrieval_score": 0.5356
+    },
+    {
+      "span_id": "2ebe998091",
+      "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+      "location": "3b1b_ch4.txt:L37-L40",
+      "retrieval_score": 0.5382
+    },
+    {
+      "span_id": "c3d30ee6d4",
+      "text": "that helps minimize the cost of the network by repeatedly stepping downhill. If you sit back and think about all that, this is a lot of layers of complexity to wrap your mind around, so don't worry if it takes",
+      "location": "3b1b_ch4.txt:L128-L130",
+      "retrieval_score": 0.5857
+    },
+    {
+      "span_id": "92c56f06b1",
+      "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+      "location": "3b1b_ch4.txt:L68-L72",
+      "retrieval_score": 0.5241
+    }
+  ],
+  "key_claims_to_explain": [
+    "Raw accuracy (number of correct predictions) is a discontinuous, step-like measure that has zero gradient almost everywhere, giving the network no signal about which direction to adjust its weights.",
+    "A cost function like mean squared error \u2014 computed as (output activation \u2212 desired value)\u00b2 \u2014 produces a smooth, continuous surface whose gradient tells the network how much and in which direction each weight should change.",
+    "Gradient descent works by repeatedly stepping in the direction that decreases the cost function; this requires the cost to be differentiable with respect to the weights and biases.",
+    "Averaging the cost over all training examples gives a single scalar that reflects overall performance, and its gradient guides weight updates that improve the network across the whole dataset."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost function measures how sensitive it is to small changes in a weight \u2014 that is, what the derivative of the cost with respect to the weight actually tells us about which direction to adjust.",
+        "visual_goal": "Show a horizontal axis labeled 'weight w' and a vertical axis labeled 'cost'. Draw a smooth curve. Place a movable point on the curve and display a tangent line at that point. Label the slope 'derivative = how sensitive cost is to w'. Add a small number line beneath the curve to represent the weight value, echoing the 'each one having its own little number line' idea. Annotate: 'this derivative tells us how to adjust the weight'.",
+        "source_ref": "2ebe998091",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "A cost function like mean squared error \u2014 computed as (output activation \u2212 desired value)\u00b2 \u2014 produces a smooth, continuous surface whose gradient tells the network how much and in which direction each weight should change.",
+        "visual_goal": "On the same axes, draw a smooth blue parabolic curve labeled 'cost = (a^L - y)\u00b2'. Show the formula appearing as a text label. Draw a tangent line at a point on the curve with an arrow indicating the slope (gradient). Emphasize the smoothness of the curve with a color highlight and label 'smooth \u2192 gradient exists everywhere'.",
+        "source_ref": "9bdcb2cd4b",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "Gradient descent works by repeatedly stepping in the direction that decreases the cost function; this requires the cost to be differentiable with respect to the weights and biases.",
+        "visual_goal": "Animate a ball rolling down the smooth blue parabolic cost curve from scene 2. At each step, draw a small arrow pointing downhill labeled 'step'. Show the weight value on the x-axis updating with each step, and the cost value on the y-axis decreasing. Add a text label 'stepping downhill = gradient descent'.",
+        "source_ref": "c3d30ee6d4",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "The full cost function involves averaging together all those costs across training examples, so the gradient used for weight updates reflects performance over the whole dataset.",
+        "visual_goal": "Show several faint blue parabolas representing individual training example costs. Animate them merging into one bold averaged cost curve labeled 'full cost = average over all training examples'. Draw a single gradient arrow on the averaged curve and label it 'averaged gradient guides weight updates'. Reference the text 'averaging together all those costs across' as a caption.",
+        "source_ref": "92c56f06b1",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": true,
+        "confidence": 0.85,
+        "reason": null
+      },
+      {
+        "scene_id": 2,
+        "grounded": false,
+        "confidence": 0.82,
+        "reason": "The span (9bdcb2cd4b) contains the formula 'a^(L - y) squared' but this appears to be a transcription artifact for (a^L - y)^2. More critically, the span does not mention that the cost produces a 'smooth, continuous surface', that a 'gradient tells the network how much and in which direction each weight should change', or that the curve is smooth and differentiable everywhere. The span only defines the cost for a single training example without discussing the gradient or smoothness properties claimed."
+      },
+      {
+        "scene_id": 3,
+        "grounded": false,
+        "confidence": 0.78,
+        "reason": "The span (c3d30ee6d4) mentions 'minimize the cost of the network by repeatedly stepping downhill', which supports the gradient descent stepping claim. However, the span does not state that this 'requires the cost to be differentiable with respect to the weights and biases' \u2014 the differentiability requirement is not present in the cited span."
+      },
+      {
+        "scene_id": 4,
+        "grounded": true,
+        "confidence": 0.8,
+        "reason": null
+      }
+    ],
+    "retry_count": 1
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The cost function measures how sensitive it is to small changes in a weight — that is, what the derivative of the cost with respect to the weight actually tells us about which direction to adjust.",
+      "visual_goal": "Show a horizontal axis labeled 'weight w' and a vertical axis labeled 'cost'. Draw a smooth curve. Place a movable point on the curve and display a tangent line at that point. Label the slope 'derivative = how sensitive cost is to w'. Add a small number line beneath the curve to represent the weight value, echoing the 'each one having its own little number line' idea. Annotate: 'this derivative tells us how to adjust the weight'.",
+      "source_ref": "2ebe998091",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The cost of the network for a single training example is (a^L - y) squared, where y is the desired activation — this gives a concrete numeric measure of how wrong the network's output is.",
+      "visual_goal": "Show two labeled values on screen: 'a^L = network output' and 'y = desired output (e.g. 0 or 1)'. Animate the formula 'cost = (a^L - y)²' appearing as a text label. Draw a smooth blue parabolic curve on axes labeled 'output a^L' (x) and 'cost' (y), with y marked as a vertical dashed line at the minimum. Highlight that the curve is smooth and bowl-shaped, with a dot sliding along it as a^L changes.",
+      "source_ref": "9bdcb2cd4b",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "Gradient descent works by repeatedly stepping downhill on the cost surface, helping minimize the cost of the network.",
+      "visual_goal": "Animate a ball rolling down the smooth blue parabolic cost curve from scene 2. At each step, draw a small arrow pointing downhill labeled 'step'. Show the weight value on the x-axis updating with each step, and the cost value on the y-axis decreasing. Add a text label 'stepping downhill = gradient descent' and a caption quoting 'stepping downhill' from the source.",
+      "source_ref": "c3d30ee6d4",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "The full cost function involves averaging together all those costs across training examples, so the gradient used for weight updates reflects performance over the whole dataset.",
+      "visual_goal": "Show several faint blue parabolas representing individual training example costs. Animate them merging into one bold averaged cost curve labeled 'full cost = average over all training examples'. Draw a single gradient arrow on the averaged curve and label it 'averaged gradient guides weight updates'. Reference the text 'averaging together all those costs across' as a caption.",
+      "source_ref": "92c56f06b1",
+      "duration_sec": 20
+    }
+  ]
+}

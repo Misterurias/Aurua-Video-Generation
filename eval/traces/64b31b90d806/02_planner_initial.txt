@@ -1,0 +1,129 @@
+
+======================================================================
+TRACE: 02_planner_initial  @  2026-04-29 01:11:09
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Plan an explainer for the following:
+
+{
+  "learning_goal": "Explain the big-picture intuition of backpropagation: how a neural network uses the chain rule to trace how much each weight and bias contributes to the cost, then adjusts them to reduce error.",
+  "relevant_spans": [
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.6682
+    },
+    {
+      "span_id": "3df09dee0c",
+      "text": "and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give",
+      "location": "3b1b_ch4.txt:L123-L127",
+      "retrieval_score": 0.6582
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5192
+    },
+    {
+      "span_id": "35508033cf",
+      "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+      "location": "3b1b_ch4.txt:L88-L90",
+      "retrieval_score": 0.5131
+    },
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.5722
+    },
+    {
+      "span_id": "03372a87c4",
+      "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of",
+      "location": "3b1b_ch4.txt:L121-L125",
+      "retrieval_score": 0.5128
+    }
+  ],
+  "key_claims_to_explain": [
+    "Backpropagation computes how sensitive the cost function is to each weight and bias in the network, forming the gradient used to step downhill toward lower cost.",
+    "The chain rule is applied layer by layer in reverse\u2014starting from the output\u2014to propagate responsibility for the error backwards through the network.",
+    "Once you know how sensitive the cost is to a layer's activations, you can reuse that same calculation to find sensitivities for all weights and biases feeding into that layer.",
+    "This iterative backwards process scales to full networks: the core idea remains the same even when layers have many neurons."
+  ]
+}
+
+Return the JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "Backpropagation computes how sensitive the cost function is to each weight and bias in the network, forming the gradient used to step downhill toward lower cost.",
+      "visual_goal": "Show a small neural network (3 layers, one neuron each) with labeled weights and biases. Highlight the cost function value as a single number at the output. Draw a downward-sloping curve labeled 'Cost' with an arrow labeled 'gradient step' pointing downhill. Text overlay: 'Which weights and biases caused this error?'",
+      "source_ref": "448484cf9c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The chain rule is applied layer by layer in reverse—starting from the output—to propagate responsibility for the error backwards through the network.",
+      "visual_goal": "Animate the same 3-layer network. Starting at the output neuron, show a red 'sensitivity' arrow flowing backwards through each connection toward the input. At each edge, display a small chain-rule expression (dC/dw = dC/da * da/dw) as a text label. Highlight each layer in sequence from right to left as the arrow passes through it.",
+      "source_ref": "a7895247a2",
+      "duration_sec": 25
+    },
+    {
+      "scene_id": 3,
+      "claim": "Once you know how sensitive the cost is to a layer's activations, you can reuse that same calculation to find sensitivities for all weights and biases feeding into that layer.",
+      "visual_goal": "Zoom into one layer transition. Show the activation node glowing after its sensitivity is computed. Then branch arrows from that node to the incoming weight and bias labels, each inheriting the same sensitivity value via multiplication. Use color-coded arrows (same color = reused quantity) to emphasize the reuse.",
+      "source_ref": "03372a87c4",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "This iterative backwards process scales to full networks: the core idea remains the same even when layers have many neurons.",
+      "visual_goal": "Expand the diagram to show a wider network with multiple neurons per layer (e.g., 3-4 neurons per layer). Show the same backwards red sensitivity arrows now fanning out across all neurons and weights simultaneously, layer by layer. End with all weights and biases highlighted and a text label: 'Gradient assembled — ready to update all parameters.'",
+      "source_ref": "35508033cf",
+      "duration_sec": 20
+    }
+  ]
+}

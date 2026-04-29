@@ -1,0 +1,179 @@
+
+======================================================================
+TRACE: 02_planner_retry_0  @  2026-04-28 23:37:26
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Explain why the chain rule produces a sum over multiple paths when a neuron's activation feeds into more than one downstream neuron, and how each path contributes a separate partial derivative term that must be added together.",
+  "relevant_spans": [
+    {
+      "span_id": "5d0b154bb4",
+      "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+      "location": "3b1b_ch4.txt:L108-L111",
+      "retrieval_score": 0.679
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5881
+    },
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.5578
+    },
+    {
+      "span_id": "a7e460b4ef",
+      "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+      "location": "3b1b_ch4.txt:L9-L13",
+      "retrieval_score": 0.543
+    }
+  ],
+  "key_claims_to_explain": [
+    "When a neuron connects to multiple downstream neurons, a small change in its activation influences the cost through every one of those connections simultaneously, creating one distinct chain-rule path per connection.",
+    "Because each path independently contributes a change to the cost, the total derivative of the cost with respect to that neuron's activation is the sum of the chain-rule terms from all downstream paths.",
+    "In the single-neuron-per-layer case the chain rule yields a single product of derivatives, but with multiple downstream neurons the same logic extends to a sum of such products\u2014one per path.",
+    "These summed chain-rule expressions are the quantities backpropagation computes when propagating error signals backward through the network to earlier layers."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "In the single-neuron-per-layer case the chain rule yields a single product of derivatives, but with multiple downstream neurons the same logic extends to a sum of such products\u2014one per path.",
+        "visual_goal": "Show a simple vertical chain of three circles labeled a^(L-2), a^(L-1), a^(L), connected by single arrows. Highlight the single chain-rule path with a colored arrow and display the product dC/da^(L) * da^(L)/da^(L-1) as a text label alongside it. Then fade this into a new diagram where a^(L-1) fans out to two downstream circles a^(L)_1 and a^(L)_2, making the branching structure visually obvious.",
+        "source_ref": "a7e460b4ef",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "When a neuron connects to multiple downstream neurons, a small change in its activation influences the cost through every one of those connections simultaneously, creating one distinct chain-rule path per connection.",
+        "visual_goal": "Animate a small delta nudge on the circle a^(L-1). Show two separate colored arrows flowing from a^(L-1) to a^(L)_1 and a^(L)_2 respectively, each labeled 'path 1' and 'path 2'. Pulse both arrows simultaneously to emphasize that the nudge travels down both paths at the same time. Label each arrow with its partial derivative symbol: da^(L)_1/da^(L-1) and da^(L)_2/da^(L-1).",
+        "source_ref": "5d0b154bb4",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "Because each path independently contributes a change to the cost, the total derivative of the cost with respect to that neuron's activation is the sum of the chain-rule terms from all downstream paths.",
+        "visual_goal": "Keep the branching diagram visible. On the right side, build up the equation dC/da^(L-1) = (dC/da^(L)_1)(da^(L)_1/da^(L-1)) + (dC/da^(L)_2)(da^(L)_2/da^(L-1)) term by term: first show the path-1 product appearing in a box, then a plus sign, then the path-2 product appearing in a second box, then a brace labeling the whole expression 'total derivative'. Color-match each term box to its corresponding arrow in the diagram.",
+        "source_ref": "5d0b154bb4",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 4,
+        "claim": "These summed chain-rule expressions are the quantities backpropagation computes when propagating error signals backward through the network to earlier layers.",
+        "visual_goal": "Show the full branching network with arrows now reversing direction (drawn in a contrasting color), flowing from the output cost node backward through a^(L)_1 and a^(L)_2 and converging back onto a^(L-1), then continuing left to a^(L-2). Label the backward arrows 'error signal'. Display the text 'Backpropagation sums these paths' centered below the diagram. Briefly flash the summed equation from scene 3 as a reminder.",
+        "source_ref": "59101efa19",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": true,
+        "confidence": 0.65,
+        "reason": null
+      },
+      {
+        "scene_id": 2,
+        "grounded": false,
+        "confidence": 0.85,
+        "reason": "The cited span (5d0b154bb4) only states that the equations look more complicated than the one-neuron-per-layer case and begins to describe a chain-rule derivative expression, but it does not contain the specific claim that a nudge to a neuron's activation travels simultaneously through multiple downstream connections creating one distinct chain-rule path per connection. The span is cut off before conveying that idea."
+      },
+      {
+        "scene_id": 3,
+        "grounded": false,
+        "confidence": 0.85,
+        "reason": "The cited span (5d0b154bb4) does not contain the summation formula dC/da^(L-1) = sum of (dC/da^(L)_k)(da^(L)_k/da^(L-1)) terms. The span is truncated mid-sentence and never states that the total derivative is a sum of chain-rule products over all downstream paths."
+      },
+      {
+        "scene_id": 4,
+        "grounded": false,
+        "confidence": 0.8,
+        "reason": "The cited span (59101efa19) describes chain rule expressions as the heart of backpropagation and as giving derivatives for the gradient, but it does not specifically state that these summed chain-rule expressions are what backpropagation computes when propagating error signals backward through earlier layers. The claim about 'summed' paths and 'error signals' propagating backward is not present in the span."
+      }
+    ],
+    "retry_count": 0
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "In the single-neuron-per-layer case the chain rule yields a single product of derivatives, but with multiple downstream neurons the same logic extends to a sum of such products—one per path.",
+      "visual_goal": "Show a simple vertical chain of three circles labeled a^(L-2), a^(L-1), a^(L), connected by single arrows. Highlight the single chain-rule path with a colored arrow and display the product dC/da^(L) * da^(L)/da^(L-1) as a text label alongside it. Then fade this into a new diagram where a^(L-1) fans out to two downstream circles a^(L)_1 and a^(L)_2, making the branching structure visually obvious.",
+      "source_ref": "a7e460b4ef",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "When a neuron connects to multiple downstream neurons, a small change in its activation influences the cost through every one of those connections simultaneously, creating one distinct chain-rule path per connection.",
+      "visual_goal": "Animate a small delta nudge on the circle a^(L-1). Show two separate colored arrows flowing from a^(L-1) to a^(L)_1 and a^(L)_2 respectively, each labeled 'path 1' and 'path 2'. Pulse both arrows simultaneously to emphasize that the nudge travels down both paths at the same time. Label each arrow with its partial derivative symbol: da^(L)_1/da^(L-1) and da^(L)_2/da^(L-1).",
+      "source_ref": "a7895247a2",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "Because each path independently contributes a change to the cost, the total derivative of the cost with respect to that neuron's activation is the sum of the chain-rule terms from all downstream paths.",
+      "visual_goal": "Keep the branching diagram visible. On the right side, build up the equation dC/da^(L-1) = (dC/da^(L)_1)(da^(L)_1/da^(L-1)) + (dC/da^(L)_2)(da^(L)_2/da^(L-1)) term by term: first show the path-1 product appearing in a box, then a plus sign, then the path-2 product appearing in a second box, then a brace labeling the whole expression 'total derivative'. Color-match each term box to its corresponding arrow in the diagram.",
+      "source_ref": "5d0b154bb4",
+      "duration_sec": 25
+    },
+    {
+      "scene_id": 4,
+      "claim": "These chain-rule expressions are the heart of backpropagation and give the derivatives that determine each component of the gradient used to minimize the network's cost.",
+      "visual_goal": "Show the full branching network with arrows now reversing direction (drawn in a contrasting color), flowing from the output cost node backward through a^(L)_1 and a^(L)_2 and converging back onto a^(L-1), then continuing left to a^(L-2). Display the text 'Chain rule expressions → gradient components → minimize cost' centered below the diagram. Briefly flash the summed equation from scene 3 as a reminder, then highlight the word 'backpropagation' in large text.",
+      "source_ref": "59101efa19",
+      "duration_sec": 20
+    }
+  ]
+}

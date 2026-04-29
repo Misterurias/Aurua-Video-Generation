@@ -1,0 +1,123 @@
+
+======================================================================
+TRACE: 02_planner_initial  @  2026-04-28 22:51:59
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Plan an explainer for the following:
+
+{
+  "learning_goal": "Teach the student that the gradient of the cost function encodes both the direction and relative importance of weight changes needed to reduce the network's error most efficiently.",
+  "relevant_spans": [
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.7287
+    },
+    {
+      "span_id": "62ae2d6cb1",
+      "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+      "location": "3b1b_ch3.txt:L19-L22",
+      "retrieval_score": 0.7189
+    },
+    {
+      "span_id": "09d733b6e3",
+      "text": "negative gradient of this cost function, which tells you how you need to change all of the weights and biases, all of these connections, so as to most efficiently decrease the cost. Backpropagation, the topic of this video, is an",
+      "location": "3b1b_ch3.txt:L21-L24",
+      "retrieval_score": 0.7172
+    },
+    {
+      "span_id": "a954214fb2",
+      "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+      "location": "3b1b_ch3.txt:L132-L136",
+      "retrieval_score": 0.6389
+    },
+    {
+      "span_id": "633bca788c",
+      "text": "preceding layer have the biggest effect since those weights are multiplied by larger activation values. So if you were to increase one of those weights, it actually has a stronger influence on the ultimate cost function than increasing the weights",
+      "location": "3b1b_ch3.txt:L80-L84",
+      "retrieval_score": 0.5901
+    }
+  ],
+  "key_claims_to_explain": [
+    "The negative gradient of the cost function specifies the direction in which all weights and biases should be nudged to most efficiently decrease the cost.",
+    "The magnitude of each gradient component indicates how sensitive the cost function is to that particular weight or bias, revealing which changes matter most.",
+    "Weights connected to larger activation values have a stronger influence on the cost function, so the gradient reflects this by assigning them larger components.",
+    "The negative gradient is effectively the average of the desired weight changes across all training examples, not a change derived from any single example."
+  ]
+}
+
+Return the JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The negative gradient of the cost function tells you how you need to change all of the weights and biases so as to most efficiently decrease the cost.",
+      "visual_goal": "Show a simple neural network diagram (circles for neurons, lines for weights). Highlight all weights and biases with a glowing outline. Display a large label 'Cost Function C' above. Draw a downward-sloping arrow labeled '−∇C' pointing from the network toward a lower cost value on a simple 2D loss curve (x-axis: weight value, y-axis: cost). Animate the arrow nudging the network in the direction that descends the curve.",
+      "source_ref": "09d733b6e3",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The magnitude of each component of the gradient is telling you how sensitive the cost function is to each weight and bias.",
+      "visual_goal": "Show a column vector representing the gradient, with each row labeled 'w1', 'w2', 'w3', 'b1'. Animate the numeric values of each component appearing one by one. Use bar lengths proportional to magnitude to visualize sensitivity — a tall bar means 'this weight matters a lot', a short bar means 'this weight barely affects cost'. Add color coding: large components in red, small components in blue. Label the bars 'high sensitivity' and 'low sensitivity'.",
+      "source_ref": "5a360a5db7",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 3,
+      "claim": "Weights connected to neurons with larger activation values have a stronger influence on the cost function, so the gradient assigns them larger components.",
+      "visual_goal": "Show two neurons in a preceding layer connected to one output neuron. Label one incoming neuron 'a = 0.9' (bright, large circle) and the other 'a = 0.1' (dim, small circle). Draw the corresponding weights as thick and thin arrows respectively. Animate increasing each weight by a small nudge and show the resulting change in cost as a larger delta for the bright neuron's weight. Highlight the thick arrow's gradient bar as taller in the gradient vector from scene 2.",
+      "source_ref": "633bca788c",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "The negative gradient is effectively the average of the desired weight changes across all training examples, not a change derived from any single example.",
+      "visual_goal": "Show three separate small neural network icons side by side, each labeled 'Example 1', 'Example 2', 'Example 3'. Under each, show a small arrow vector representing that example's desired weight nudge. Animate the three arrow vectors merging into a single averaged arrow vector in the center, labeled '−∇C (average)'. Use a simple averaging equation: '(Δw₁ + Δw₂ + Δw₃) / 3' displayed as text below the merge animation.",
+      "source_ref": "a954214fb2",
+      "duration_sec": 20
+    }
+  ]
+}

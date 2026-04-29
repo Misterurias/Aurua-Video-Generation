@@ -1,0 +1,163 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-28 23:36:56
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+Why does the chain rule give us a sum over paths when a neuron connects to multiple neurons?
+
+Retrieved source spans (top 10 after query expansion + dedup):
+[
+  {
+    "span_id": "5d0b154bb4",
+    "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+    "location": "3b1b_ch4.txt:L108-L111",
+    "retrieval_score": 0.679
+  },
+  {
+    "span_id": "92c56f06b1",
+    "text": "is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with respect to w(L) only of the cost for a specific single training example. Since the full cost function involves averaging together all those costs across",
+    "location": "3b1b_ch4.txt:L68-L72",
+    "retrieval_score": 0.6031
+  },
+  {
+    "span_id": "a7895247a2",
+    "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+    "location": "3b1b_ch4.txt:L82-L85",
+    "retrieval_score": 0.5881
+  },
+  {
+    "span_id": "c6e5a48a3e",
+    "text": "last derivative, the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with",
+    "location": "3b1b_ch4.txt:L66-L69",
+    "retrieval_score": 0.583
+  },
+  {
+    "span_id": "4510ebfb14",
+    "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+    "location": "3b1b_ch4.txt:L14-L17",
+    "retrieval_score": 0.565
+  },
+  {
+    "span_id": "448484cf9c",
+    "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+    "location": "3b1b_ch4.txt:L12-L15",
+    "retrieval_score": 0.5579
+  },
+  {
+    "span_id": "59101efa19",
+    "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+    "location": "3b1b_ch4.txt:L125-L129",
+    "retrieval_score": 0.5578
+  },
+  {
+    "span_id": "a7e460b4ef",
+    "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+    "location": "3b1b_ch4.txt:L9-L13",
+    "retrieval_score": 0.543
+  },
+  {
+    "span_id": "d37587eeb3",
+    "text": "single training example. Since the full cost function involves averaging together all those costs across many different training examples, its derivative requires averaging this expression over all training examples. And of course, that is just one component of the gradient",
+    "location": "3b1b_ch4.txt:L70-L74",
+    "retrieval_score": 0.5371
+  },
+  {
+    "span_id": "93b519884d",
+    "text": "The hard assumption here is that you've watched part 3, giving an intuitive walkthrough of the backpropagation algorithm. Here we get a little more formal and dive into the relevant calculus. It's normal for this to be at least a",
+    "location": "3b1b_ch4.txt:L1-L4",
+    "retrieval_score": 0.5343
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "mechanical",
+  "learning_goal": "Explain why the chain rule produces a sum over multiple paths when a neuron's activation feeds into more than one downstream neuron, and how each path contributes a separate partial derivative term that must be added together.",
+  "relevant_spans": [
+    {
+      "span_id": "5d0b154bb4",
+      "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+      "location": "3b1b_ch4.txt:L108-L111",
+      "retrieval_score": 0.679
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5881
+    },
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.5578
+    },
+    {
+      "span_id": "a7e460b4ef",
+      "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+      "location": "3b1b_ch4.txt:L9-L13",
+      "retrieval_score": 0.543
+    }
+  ],
+  "key_claims_to_explain": [
+    "When a neuron connects to multiple downstream neurons, a small change in its activation influences the cost through every one of those connections simultaneously, creating one distinct chain-rule path per connection.",
+    "Because each path independently contributes a change to the cost, the total derivative of the cost with respect to that neuron's activation is the sum of the chain-rule terms from all downstream paths.",
+    "In the single-neuron-per-layer case the chain rule yields a single product of derivatives, but with multiple downstream neurons the same logic extends to a sum of such products—one per path.",
+    "These summed chain-rule expressions are the quantities backpropagation computes when propagating error signals backward through the network to earlier layers."
+  ],
+  "clarification_question": null
+}

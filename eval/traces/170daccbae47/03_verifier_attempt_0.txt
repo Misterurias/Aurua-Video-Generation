@@ -1,0 +1,150 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_0  @  2026-04-28 23:05:17
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient of the cost function is a vector where each component corresponds to a specific weight or bias, indicating how sensitive the cost is to that parameter.",
+        "visual_goal": "Show a small neural network (3 nodes, 2 connections) on the left. On the right, draw a vertical vector with labeled components: dC/dw1, dC/dw2, dC/db1. Highlight each weight/bias in the network and draw an arrow connecting it to its corresponding vector component, using color coding (e.g., blue for weights, orange for biases).",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The negative gradient points in the direction that most efficiently decreases the cost, telling you how to adjust all weights and biases simultaneously.",
+        "visual_goal": "Show a simple 2D cost surface as a curved bowl (drawn with a parabola-like arc and contour lines as ellipses). Place a dot representing current parameters. Draw a red arrow labeled 'gradient' pointing uphill, then a green arrow labeled '-gradient' pointing downhill toward the minimum. Add a text label: 'steepest descent'. Animate the dot moving along the green arrow.",
+        "source_ref": "09d733b6e3",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 3,
+        "claim": "The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias.",
+        "visual_goal": "Return to the gradient vector from scene 1. Animate two components side by side: one with a large value (e.g., 0.9, shown as a tall bar) and one with a small value (e.g., 0.05, shown as a short bar). Label the tall bar 'high sensitivity \u2014 adjust more' and the short bar 'low sensitivity \u2014 adjust less'. Use color intensity to reinforce magnitude.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 4,
+        "claim": "This collection of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function.",
+        "visual_goal": "Show three rows of small gradient vectors, each labeled 'training example 1', 'training example 2', 'training example 3'. Draw arrows merging them into a single averaged vector on the right, labeled 'negative gradient (average)'. Use a summation symbol and a division-by-3 annotation to make the averaging explicit.",
+        "source_ref": "a954214fb2",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.7287
+    },
+    {
+      "span_id": "62ae2d6cb1",
+      "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+      "location": "3b1b_ch3.txt:L19-L22",
+      "retrieval_score": 0.7189
+    },
+    {
+      "span_id": "09d733b6e3",
+      "text": "negative gradient of this cost function, which tells you how you need to change all of the weights and biases, all of these connections, so as to most efficiently decrease the cost. Backpropagation, the topic of this video, is an",
+      "location": "3b1b_ch3.txt:L21-L24",
+      "retrieval_score": 0.7172
+    },
+    {
+      "span_id": "a954214fb2",
+      "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+      "location": "3b1b_ch3.txt:L132-L136",
+      "retrieval_score": 0.6389
+    },
+    {
+      "span_id": "633bca788c",
+      "text": "preceding layer have the biggest effect since those weights are multiplied by larger activation values. So if you were to increase one of those weights, it actually has a stronger influence on the ultimate cost function than increasing the weights",
+      "location": "3b1b_ch3.txt:L80-L84",
+      "retrieval_score": 0.5901
+    }
+  ],
+  "retry_count": 0
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": false,
+      "confidence": 0.75,
+      "reason": "The span 5a360a5db7 mentions sensitivity of the cost function to each weight and bias, but does not describe the gradient as a vector with components corresponding to specific weights and biases, nor does it explain the structure of the gradient vector (dC/dw1, dC/dw2, dC/db1). The claim about the gradient being a vector where each component corresponds to a specific parameter is not supported by this span."
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.85,
+      "reason": "Span 09d733b6e3 directly states that the negative gradient tells you how to change all weights and biases so as to most efficiently decrease the cost, which supports the claim."
+    },
+    {
+      "scene_id": 3,
+      "grounded": true,
+      "confidence": 0.9,
+      "reason": "Span 5a360a5db7 directly states 'The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias,' which is nearly verbatim the claim."
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.95,
+      "reason": "Span a954214fb2 directly states 'This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function,' which is nearly verbatim the claim."
+    }
+  ],
+  "retry_count": 0
+}

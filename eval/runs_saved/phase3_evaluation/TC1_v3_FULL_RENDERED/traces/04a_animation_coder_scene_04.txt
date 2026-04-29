@@ -1,0 +1,165 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_04  @  2026-04-28 23:06:30
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 4
+claim: This collection of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function.
+visual_goal: Show three rows of small gradient vectors, each labeled 'training example 1', 'training example 2', 'training example 3'. Draw arrows merging them into a single averaged vector on the right, labeled 'negative gradient (average)'. Use a summation symbol and a division-by-3 annotation to make the averaging explicit.
+duration_sec: 20
+
+Class name: Scene04
+Output file will be: scene_04.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene04(Scene):
+    def construct(self):
+        title = Text("Averaging Nudges → Negative Gradient", font_size=34, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.8)
+
+        # Helper to make a small gradient vector column
+        def make_vec(values, color=BLUE):
+            entries = VGroup(*[Text(v, font_size=20, color=color) for v in values])
+            entries.arrange(DOWN, buff=0.12)
+            box = Rectangle(
+                width=entries.width + 0.4,
+                height=entries.height + 0.3,
+                color=color,
+                stroke_width=2,
+            )
+            box.move_to(entries.get_center())
+            return VGroup(box, entries)
+
+        vec1 = make_vec(["+0.21", "−0.13", "+0.05", "−0.42"], BLUE)
+        vec2 = make_vec(["+0.18", "−0.20", "+0.11", "−0.35"], GREEN)
+        vec3 = make_vec(["+0.24", "−0.09", "+0.02", "−0.46"], RED)
+
+        label1 = Text("training example 1", font_size=20, color=BLUE)
+        label2 = Text("training example 2", font_size=20, color=GREEN)
+        label3 = Text("training example 3", font_size=20, color=RED)
+
+        row1 = VGroup(label1, vec1).arrange(RIGHT, buff=0.4)
+        row2 = VGroup(label2, vec2).arrange(RIGHT, buff=0.4)
+        row3 = VGroup(label3, vec3).arrange(RIGHT, buff=0.4)
+
+        rows = VGroup(row1, row2, row3).arrange(DOWN, buff=0.4)
+        rows.shift(LEFT * 3.2 + DOWN * 0.3)
+
+        self.play(FadeIn(row1, shift=RIGHT))
+        self.wait(0.4)
+        self.play(FadeIn(row2, shift=RIGHT))
+        self.wait(0.4)
+        self.play(FadeIn(row3, shift=RIGHT))
+        self.wait(1.0)
+
+        # Summation symbol with division
+        sum_label = Text("(1/3) · Σ", font_size=36, color=WHITE)
+        sum_label.move_to(RIGHT * 1.2 + DOWN * 0.3)
+        self.play(Write(sum_label))
+        self.wait(0.5)
+
+        # Arrows merging from each vector to the sum point
+        arrow1 = Arrow(vec1.get_right(), sum_label.get_left(), buff=0.15, color=BLUE, stroke_width=3)
+        arrow2 = Arrow(vec2.get_right(), sum_label.get_left(), buff=0.15, color=GREEN, stroke_width=3)
+        arrow3 = Arrow(vec3.get_right(), sum_label.get_left(), buff=0.15, color=RED, stroke_width=3)
+
+        self.play(GrowArrow(arrow1), GrowArrow(arrow2), GrowArrow(arrow3))
+        self.wait(1.0)
+
+        # Averaged vector on the right
+        avg_vec = make_vec(["+0.21", "−0.14", "+0.06", "−0.41"], YELLOW)
+        avg_vec.move_to(RIGHT * 4.3 + DOWN * 0.3)
+
+        merge_arrow = Arrow(sum_label.get_right(), avg_vec.get_left(), buff=0.15, color=YELLOW, stroke_width=4)
+
+        self.play(GrowArrow(merge_arrow))
+        self.play(FadeIn(avg_vec, shift=RIGHT))
+        self.wait(0.6)
+
+        avg_label = Text("−∇C", font_size=30, color=YELLOW, weight=BOLD)
+        avg_label.next_to(avg_vec, UP, buff=0.25)
+        sub_label = Text("negative gradient (average)", font_size=18, color=YELLOW)
+        sub_label.next_to(avg_vec, DOWN, buff=0.25)
+
+        self.play(Write(avg_label), FadeIn(sub_label))
+        self.play(Indicate(avg_vec, color=YELLOW, scale_factor=1.1))
+        self.wait(2.5)
+
+        self.play(
+            FadeOut(rows), FadeOut(arrow1), FadeOut(arrow2), FadeOut(arrow3),
+            FadeOut(sum_label), FadeOut(merge_arrow),
+            FadeOut(avg_vec), FadeOut(avg_label), FadeOut(sub_label),
+            FadeOut(title),
+        )

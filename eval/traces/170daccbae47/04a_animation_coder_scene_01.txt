@@ -1,0 +1,159 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_01  @  2026-04-28 23:05:44
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 1
+claim: The negative gradient of the cost function tells you how you need to change all of the weights and biases so as to most efficiently decrease the cost.
+visual_goal: Show a small neural network (3 nodes, 2 connections) on the left. On the right, draw a vertical vector with labeled components corresponding to each connection and node (w1, w2, b1). Add a label above the vector reading 'negative gradient'. Draw arrows from each weight/bias in the network to its vector component using color coding (blue for weights, orange for biases). Add a text annotation: 'one component per parameter'.
+duration_sec: 20
+
+Class name: Scene01
+Output file will be: scene_01.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Negative Gradient", font_size=38, color=YELLOW, weight=BOLD)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.5)
+
+        # Build a small neural network on the left
+        node1 = Circle(radius=0.35, color=WHITE, fill_opacity=0.2).shift(LEFT*4.5 + UP*1.5)
+        node2 = Circle(radius=0.35, color=WHITE, fill_opacity=0.2).shift(LEFT*4.5 + DOWN*1.5)
+        node3 = Circle(radius=0.35, color=WHITE, fill_opacity=0.2).shift(LEFT*1.5 + DOWN*0)
+
+        n1_label = Text("a₁", font_size=22).move_to(node1.get_center())
+        n2_label = Text("a₂", font_size=22).move_to(node2.get_center())
+        n3_label = Text("a₃", font_size=22).move_to(node3.get_center())
+
+        # Connections (weights)
+        conn1 = Line(node1.get_right(), node3.get_left(), color=BLUE, stroke_width=4)
+        conn2 = Line(node2.get_right(), node3.get_left(), color=BLUE, stroke_width=4)
+
+        w1_label = Text("w₁", font_size=22, color=BLUE).next_to(conn1.get_center(), UP, buff=0.1)
+        w2_label = Text("w₂", font_size=22, color=BLUE).next_to(conn2.get_center(), DOWN, buff=0.1)
+
+        # Bias indicator on node3
+        bias_marker = Text("b₁", font_size=22, color=ORANGE).next_to(node3, RIGHT, buff=0.2)
+
+        network = VGroup(node1, node2, node3, n1_label, n2_label, n3_label,
+                         conn1, conn2, w1_label, w2_label, bias_marker)
+
+        self.play(Create(VGroup(node1, node2, node3)),
+                  Write(VGroup(n1_label, n2_label, n3_label)))
+        self.play(Create(VGroup(conn1, conn2)),
+                  Write(VGroup(w1_label, w2_label)))
+        self.play(Write(bias_marker))
+        self.wait(0.8)
+
+        # Vector on the right
+        vec_label = Text("−∇C", font_size=32, color=YELLOW, weight=BOLD).shift(RIGHT*3.8 + UP*2.6)
+
+        bracket_l = Line(UP*1.2, DOWN*1.2).shift(RIGHT*2.8 + UP*0.2)
+        bracket_r = Line(UP*1.2, DOWN*1.2).shift(RIGHT*4.8 + UP*0.2)
+        btl = Line(LEFT*0.2, RIGHT*0.0).shift(RIGHT*2.8 + UP*1.4)
+        bbl = Line(LEFT*0.2, RIGHT*0.0).shift(RIGHT*2.8 + DOWN*1.0)
+        btr = Line(LEFT*0.0, RIGHT*0.2).shift(RIGHT*4.8 + UP*1.4)
+        bbr = Line(LEFT*0.0, RIGHT*0.2).shift(RIGHT*4.8 + DOWN*1.0)
+
+        comp1 = Text("w₁", font_size=26, color=BLUE).shift(RIGHT*3.8 + UP*0.9)
+        comp2 = Text("w₂", font_size=26, color=BLUE).shift(RIGHT*3.8 + UP*0.2)
+        comp3 = Text("b₁", font_size=26, color=ORANGE).shift(RIGHT*3.8 + DOWN*0.5)
+
+        vector = VGroup(bracket_l, bracket_r, btl, bbl, btr, bbr, comp1, comp2, comp3)
+
+        self.play(Write(vec_label))
+        self.play(Create(VGroup(bracket_l, bracket_r, btl, bbl, btr, bbr)))
+        self.play(FadeIn(comp1), FadeIn(comp2), FadeIn(comp3))
+        self.wait(0.8)
+
+        # Arrows from network to vector components
+        arr1 = Arrow(w1_label.get_right(), comp1.get_left(), color=BLUE, buff=0.15, stroke_width=3)
+        arr2 = Arrow(w2_label.get_right(), comp2.get_left(), color=BLUE, buff=0.15, stroke_width=3)
+        arr3 = Arrow(bias_marker.get_right(), comp3.get_left(), color=ORANGE, buff=0.15, stroke_width=3)
+
+        self.play(GrowArrow(arr1))
+        self.play(GrowArrow(arr2))
+        self.play(GrowArrow(arr3))
+        self.wait(0.8)
+
+        annotation = Text("one component per parameter", font_size=24, color=WHITE)
+        annotation.to_edge(DOWN, buff=0.6)
+        self.play(Write(annotation))
+        self.wait(2.5)
+
+        self.play(FadeOut(VGroup(title, network, vec_label, vector,
+                                  arr1, arr2, arr3, annotation)))
+        self.wait(0.3)

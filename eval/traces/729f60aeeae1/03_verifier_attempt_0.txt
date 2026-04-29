@@ -1,0 +1,150 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_0  @  2026-04-28 22:48:23
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient of the cost function is a vector made up of the partial derivatives of the cost with respect to every weight and bias in the network.",
+        "visual_goal": "Show a small neural network diagram with labeled weights (w1, w2, w3) and biases (b1, b2, b3). Fade in a column vector on the right side of the screen labeled 'gradient' with entries \u2202C/\u2202w1, \u2202C/\u2202w2, \u2202C/\u2202w3, \u2202C/\u2202b1, \u2202C/\u2202b2, \u2202C/\u2202b3. Draw arrows from each weight/bias label in the network to its corresponding row in the vector to show the one-to-one correspondence.",
+        "source_ref": "0b4ea9579c",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "Each partial derivative measures how sensitive the cost function is to a small change in one specific weight \u2014 i.e., how much nudging that weight moves the cost up or down.",
+        "visual_goal": "Zoom in on a single weight w(L) and its number line. Show a small rightward nudge (delta w) on the number line, then animate an arrow pointing to a separate cost axis showing the resulting small change in cost (delta C). Label the ratio delta-C / delta-w as the partial derivative. Use color highlight on w(L) in the network diagram to keep context clear.",
+        "source_ref": "2ebe998091",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "The sign of a partial derivative tells us which direction to adjust a weight (increase or decrease it) to reduce the cost, and the magnitude tells us which weights have the largest effect.",
+        "visual_goal": "Display a horizontal bar chart where each bar represents one partial derivative (\u2202C/\u2202w1 through \u2202C/\u2202b3). Bars extending right are positive (red), bars extending left are negative (blue). Annotate: a large positive bar means 'decrease this weight to lower cost'; a large negative bar means 'increase this weight'. Highlight the tallest bar to illustrate 'largest influence'. Add a small legend explaining sign \u2192 direction, length \u2192 magnitude.",
+        "source_ref": "4510ebfb14",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "By following the negative gradient \u2014 adjusting all weights in the direction that most decreases the cost \u2014 the network learns most efficiently.",
+        "visual_goal": "Show a simple 2D bowl-shaped cost surface (drawn as concentric ellipses representing contour lines) with a dot representing current weights. Draw the gradient vector as an arrow pointing uphill (away from the minimum). Then draw the negative gradient arrow pointing downhill toward the minimum. Animate the dot stepping along the negative gradient direction in two or three steps, each time the dot moving closer to the center of the bowl. Label the step 'w \u2190 w \u2212 \u03b7\u00b7\u2207C'.",
+        "source_ref": "448484cf9c",
+        "duration_sec": 25
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.6118
+    },
+    {
+      "span_id": "4510ebfb14",
+      "text": "the cost function is to these variables. That way, we know which adjustments to those terms will cause the most efficient decrease to the cost function. And we're just going to focus on the connection between the last two neurons.",
+      "location": "3b1b_ch4.txt:L14-L17",
+      "retrieval_score": 0.5874
+    },
+    {
+      "span_id": "0b4ea9579c",
+      "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though",
+      "location": "3b1b_ch4.txt:L73-L77",
+      "retrieval_score": 0.6566
+    },
+    {
+      "span_id": "2ebe998091",
+      "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+      "location": "3b1b_ch4.txt:L37-L40",
+      "retrieval_score": 0.6667
+    },
+    {
+      "span_id": "81f31938c0",
+      "text": "head down in the formulas without taking a moment to sit back and remind yourself of what they all mean. In the case of this last derivative, the amount that the small nudge to the weight influenced the last layer",
+      "location": "3b1b_ch4.txt:L64-L67",
+      "retrieval_score": 0.566
+    }
+  ],
+  "retry_count": 0
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.82,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 3,
+      "grounded": false,
+      "confidence": 0.85,
+      "reason": "Span 4510ebfb14 mentions knowing 'which adjustments to those terms will cause the most efficient decrease to the cost function' but does not discuss the sign of a partial derivative indicating direction (increase vs. decrease a weight) or the magnitude indicating relative influence. The claim about sign and magnitude interpretation is not supported by this span."
+    },
+    {
+      "scene_id": 4,
+      "grounded": false,
+      "confidence": 0.88,
+      "reason": "Span 448484cf9c discusses sensitivity of the cost function to weights and biases in a small network, but does not mention following the negative gradient, gradient descent, the update rule w ← w − η·∇C, or the concept of moving downhill on a cost surface. The core claim about gradient descent and learning most efficiently is absent from this span."
+    }
+  ],
+  "retry_count": 0
+}

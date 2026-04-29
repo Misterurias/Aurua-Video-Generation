@@ -1,0 +1,144 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_2  @  2026-04-28 23:37:53
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "Neural networks can be understood by starting with an extremely simple network where each layer has a single neuron, establishing the basic chain-rule path before extending to multiple neurons per layer.",
+        "visual_goal": "Show a vertical chain of three circles labeled a^(L-2), a^(L-1), a^(L), connected by single arrows. Display the text 'one neuron per layer' as a label. Highlight the single chain-rule path with a colored arrow and display the product dC/da^(L) * da^(L)/da^(L-1) as a text label alongside it. Then fade into a new diagram where a^(L-1) fans out to two downstream circles a^(L)_1 and a^(L)_2, making the branching structure visually obvious, with a label 'multiple neurons per layer'.",
+        "source_ref": "a7e460b4ef",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The cost function's sensitivity to an earlier layer's activation is computed by propagating backwards through the network, using the chain rule to link each layer's contribution.",
+        "visual_goal": "Animate the branching diagram with a^(L-1) connecting to a^(L)_1 and a^(L)_2. Show a cost node C on the right. Draw backward-pointing arrows from C through a^(L)_1 and a^(L)_2 toward a^(L-1), colored in a contrasting color to represent backpropagation. Label the backward arrows with 'sensitivity of cost to previous layer' and show the partial derivative symbol dC/da^(L-1) appearing at a^(L-1).",
+        "source_ref": "a7895247a2",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "In the multi-neuron case the chain-rule derivative expression describing how sensitive the cost is to a specific activation looks more complicated than the single-neuron case, but is essentially the same equations extended across all connections.",
+        "visual_goal": "Keep the branching diagram visible. Show the single-neuron equation dC/da^(L-1) = dC/da^(L) * da^(L)/da^(L-1) on the left side, labeled 'one neuron per layer'. Then on the right side, build up the extended equation dC/da^(L-1) = (dC/da^(L)_1)(da^(L)_1/da^(L-1)) + (dC/da^(L)_2)(da^(L)_2/da^(L-1)) term by term: first show the path-1 product in a colored box, then a plus sign, then the path-2 product in a second colored box. Draw a brace under both sides labeled 'same logic, more paths'. Color-match each term box to its corresponding arrow in the diagram.",
+        "source_ref": "5d0b154bb4",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 4,
+        "claim": "These chain-rule expressions are the heart of backpropagation and give the derivatives that determine each component of the gradient used to minimize the network's cost.",
+        "visual_goal": "Show the full branching network with arrows reversing direction in a contrasting color, flowing from the output cost node backward through a^(L)_1 and a^(L)_2 and converging back onto a^(L-1), then continuing left to a^(L-2). Display the text 'Chain rule expressions -> gradient components -> minimize cost' centered below the diagram. Briefly flash the summed equation from scene 3 as a reminder, then highlight the word 'backpropagation' in large text at the center of the screen.",
+        "source_ref": "59101efa19",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "5d0b154bb4",
+      "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+      "location": "3b1b_ch4.txt:L108-L111",
+      "retrieval_score": 0.679
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5881
+    },
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.5578
+    },
+    {
+      "span_id": "a7e460b4ef",
+      "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+      "location": "3b1b_ch4.txt:L9-L13",
+      "retrieval_score": 0.543
+    }
+  ],
+  "retry_count": 2
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.82,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 3,
+      "grounded": false,
+      "confidence": 0.72,
+      "reason": "The span (5d0b154bb4) begins mid-sentence with 'where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific' — the sentence is cut off and does not actually contain the full claim. Specifically, it does not show or state the summed multi-neuron chain-rule equation (the sum of two path products) that the claim asserts is 'essentially the same equations extended across all connections.' The span implies the idea but does not contain the equation or the explicit statement that it is a sum over all connections."
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.92,
+      "reason": null
+    }
+  ],
+  "retry_count": 2
+}

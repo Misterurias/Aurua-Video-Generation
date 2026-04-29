@@ -1,0 +1,175 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-29 01:10:56
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+How does backpropagation work at a big-picture idea (for conceptual intuition)?
+
+Retrieved source spans (top 10 after query expansion + dedup):
+[
+  {
+    "span_id": "59101efa19",
+    "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+    "location": "3b1b_ch4.txt:L125-L129",
+    "retrieval_score": 0.6682
+  },
+  {
+    "span_id": "3df09dee0c",
+    "text": "and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give",
+    "location": "3b1b_ch4.txt:L123-L127",
+    "retrieval_score": 0.6582
+  },
+  {
+    "span_id": "93b519884d",
+    "text": "The hard assumption here is that you've watched part 3, giving an intuitive walkthrough of the backpropagation algorithm. Here we get a little more formal and dive into the relevant calculus. It's normal for this to be at least a",
+    "location": "3b1b_ch4.txt:L1-L4",
+    "retrieval_score": 0.6158
+  },
+  {
+    "span_id": "448484cf9c",
+    "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+    "location": "3b1b_ch4.txt:L12-L15",
+    "retrieval_score": 0.5722
+  },
+  {
+    "span_id": "a91755c78a",
+    "text": "previous biases. And you might think this is an overly simple example, since all layers have one neuron, and things are going to get exponentially more complicated for a real network. But honestly, not that much changes when we give",
+    "location": "3b1b_ch4.txt:L89-L92",
+    "retrieval_score": 0.5544
+  },
+  {
+    "span_id": "ef60f27c72",
+    "text": "weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see",
+    "location": "3b1b_ch4.txt:L85-L89",
+    "retrieval_score": 0.5276
+  },
+  {
+    "span_id": "a7895247a2",
+    "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+    "location": "3b1b_ch4.txt:L82-L85",
+    "retrieval_score": 0.5192
+  },
+  {
+    "span_id": "a7e460b4ef",
+    "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+    "location": "3b1b_ch4.txt:L9-L13",
+    "retrieval_score": 0.5154
+  },
+  {
+    "span_id": "35508033cf",
+    "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+    "location": "3b1b_ch4.txt:L88-L90",
+    "retrieval_score": 0.5131
+  },
+  {
+    "span_id": "03372a87c4",
+    "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of",
+    "location": "3b1b_ch4.txt:L121-L125",
+    "retrieval_score": 0.5128
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Explain the big-picture intuition of backpropagation: how a neural network uses the chain rule to trace how much each weight and bias contributes to the cost, then adjusts them to reduce error.",
+  "relevant_spans": [
+    {
+      "span_id": "59101efa19",
+      "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+      "location": "3b1b_ch4.txt:L125-L129",
+      "retrieval_score": 0.6682
+    },
+    {
+      "span_id": "3df09dee0c",
+      "text": "and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give",
+      "location": "3b1b_ch4.txt:L123-L127",
+      "retrieval_score": 0.6582
+    },
+    {
+      "span_id": "a7895247a2",
+      "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+      "location": "3b1b_ch4.txt:L82-L85",
+      "retrieval_score": 0.5192
+    },
+    {
+      "span_id": "35508033cf",
+      "text": "because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and previous biases. And you might think this is an overly simple example, since all layers",
+      "location": "3b1b_ch4.txt:L88-L90",
+      "retrieval_score": 0.5131
+    },
+    {
+      "span_id": "448484cf9c",
+      "text": "layer has a single neuron in it. This network is determined by three weights and three biases, and our goal is to understand how sensitive the cost function is to these variables. That way, we know which adjustments to those",
+      "location": "3b1b_ch4.txt:L12-L15",
+      "retrieval_score": 0.5722
+    },
+    {
+      "span_id": "03372a87c4",
+      "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of",
+      "location": "3b1b_ch4.txt:L121-L125",
+      "retrieval_score": 0.5128
+    }
+  ],
+  "key_claims_to_explain": [
+    "Backpropagation computes how sensitive the cost function is to each weight and bias in the network, forming the gradient used to step downhill toward lower cost.",
+    "The chain rule is applied layer by layer in reverse—starting from the output—to propagate responsibility for the error backwards through the network.",
+    "Once you know how sensitive the cost is to a layer's activations, you can reuse that same calculation to find sensitivities for all weights and biases feeding into that layer.",
+    "This iterative backwards process scales to full networks: the core idea remains the same even when layers have many neurons."
+  ],
+  "clarification_question": null
+}

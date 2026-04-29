@@ -1,0 +1,131 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_1  @  2026-04-28 22:43:20
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The weighted sum z = w\u00b7a_prev + b is a linear function of w, so \u2202z/\u2202w = a_prev (the activation feeding into the weight).",
+        "visual_goal": "Show two labeled circles (neurons) connected by an arrow labeled 'w'. Display the equation z = w\u00b7a_prev + b as a text label near the connection. Highlight w in one color and a_prev in another. Then animate a small nudge \u0394w to w and show the resulting change in z equals a_prev\u00b7\u0394w, making clear the slope is a_prev.",
+        "source_ref": "c6e5a48a3e",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "By the chain rule, \u2202C/\u2202w = (\u2202C/\u2202a) \u00b7 (\u2202a/\u2202z) \u00b7 (\u2202z/\u2202w), and since \u2202z/\u2202w = a_prev, the entire gradient is proportional to that incoming activation.",
+        "visual_goal": "Display a horizontal chain of three labeled boxes: 'w \u2192 z \u2192 a \u2192 C', connected by arrows. Below each arrow, show the corresponding partial derivative label: \u2202z/\u2202w, \u2202a/\u2202z, \u2202C/\u2202a. Then animate the chain rule product assembling left-to-right, and finally substitute \u2202z/\u2202w = a_prev so the full expression reads \u2202C/\u2202w = (\u2202C/\u2202a)\u00b7(\u2202a/\u2202z)\u00b7a_prev, with a_prev highlighted.",
+        "source_ref": "2ebe998091",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 3,
+        "claim": "A larger incoming activation means a nudge to the weight has a larger effect on the weighted sum, and therefore a larger effect on the cost \u2014 this is the 'neurons that fire together wire together' principle.",
+        "visual_goal": "Show two side-by-side comparisons: on the left, a dimly colored source neuron (small a_prev) connected by an arrow to a target neuron, with a small bar indicating the resulting gradient magnitude; on the right, a brightly colored source neuron (large a_prev) with a proportionally taller bar. Animate both bars growing simultaneously to contrast them. Add a text label 'neurons that fire together wire together' fading in beneath the comparison.",
+        "source_ref": "c6e5a48a3e",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "c6e5a48a3e",
+      "text": "last derivative, the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in. And all of this is the derivative with",
+      "location": "3b1b_ch4.txt:L66-L69",
+      "retrieval_score": 0.624
+    },
+    {
+      "span_id": "2ebe998091",
+      "text": "be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative",
+      "location": "3b1b_ch4.txt:L37-L40",
+      "retrieval_score": 0.6726
+    },
+    {
+      "span_id": "5cc48e0882",
+      "text": "And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific weight looks essentially the same. I'll leave it to you to pause and think about each of those terms if you want. What does change",
+      "location": "3b1b_ch4.txt:L110-L113",
+      "retrieval_score": 0.7154
+    },
+    {
+      "span_id": "01351e13bb",
+      "text": "of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is",
+      "location": "3b1b_ch4.txt:L75-L79",
+      "retrieval_score": 0.6685
+    }
+  ],
+  "retry_count": 1
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.65,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": false,
+      "confidence": 0.85,
+      "reason": "The cited span (2ebe998091) only mentions the goal of understanding sensitivity of the cost function to small changes in weight w(L) and introduces the concept of a derivative — it does not contain the chain rule decomposition ∂C/∂w = (∂C/∂a)·(∂a/∂z)·(∂z/∂w) or the substitution ∂z/∂w = a_prev. The chain rule expression is referenced in span 5cc48e0882 but even that span does not spell out the full product or the substitution."
+    },
+    {
+      "scene_id": 3,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    }
+  ],
+  "retry_count": 1
+}

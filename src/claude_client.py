@@ -37,6 +37,17 @@ def get_client() -> Anthropic:
     return _client
 
 
+# Models that have deprecated the `temperature` parameter. Add to this list
+# as the API surface changes. Calling with temperature on these models
+# returns 400 invalid_request_error.
+_MODELS_WITHOUT_TEMPERATURE = frozenset({
+    "claude-opus-4-7",
+})
+
+
+def _model_rejects_temperature(model: str) -> bool:
+    return model in _MODELS_WITHOUT_TEMPERATURE
+
 def call_claude(
     *,
     system_prompt: str,
@@ -52,13 +63,19 @@ def call_claude(
     client = get_client()
     start = time.time()
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    # Build kwargs conditionally — some recent models (e.g., claude-opus-4-7)
+    # have deprecated the `temperature` parameter and reject it outright.
+    create_kwargs = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "system": system_prompt,
+        "messages": [{"role": "user", "content": user_prompt}],
+    }
+    if not _model_rejects_temperature(model):
+        create_kwargs["temperature"] = temperature
+
+    response = client.messages.create(**create_kwargs)
+
 
     elapsed = time.time() - start
 
