@@ -1,0 +1,147 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_04  @  2026-04-29 10:22:19
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 4
+claim: The collection of averaged nudges to each weight and bias across all training examples is, loosely speaking, the negative gradient of the cost function.
+visual_goal: Show three separate small column vectors side by side, each labeled 'example 1', 'example 2', 'example 3', with different colored component bars representing each example's desired nudge to weights and biases. Animate arrows from all three vectors merging into a single averaged vector in the center. Label the merged vector 'averaged nudges ≈ negative gradient'. Add a text annotation quoting loosely: 'this collection of averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function'.
+duration_sec: 20
+
+Class name: Scene04
+Output file will be: scene_04.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+
+class Scene04(Scene):
+    def construct(self):
+        title = Text("Averaging Nudges Across Examples", font_size=32, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.5)
+
+        def make_vector(label_text, colors, heights, label_color):
+            bars = VGroup()
+            for c, h in zip(colors, heights):
+                bar = Rectangle(width=0.5, height=h, fill_color=c, fill_opacity=0.85, stroke_width=1, stroke_color=WHITE)
+                bars.add(bar)
+            bars.arrange(DOWN, buff=0.05)
+            label = Text(label_text, font_size=20, color=label_color)
+            label.next_to(bars, DOWN, buff=0.2)
+            return VGroup(bars, label)
+
+        v1 = make_vector("example 1", [BLUE, GREEN, RED, YELLOW], [0.4, 0.7, 0.3, 0.5], BLUE)
+        v2 = make_vector("example 2", [BLUE, GREEN, RED, YELLOW], [0.6, 0.3, 0.5, 0.4], GREEN)
+        v3 = make_vector("example 3", [BLUE, GREEN, RED, YELLOW], [0.3, 0.5, 0.6, 0.7], RED)
+
+        v1.move_to(LEFT * 4.5 + UP * 0.3)
+        v2.move_to(LEFT * 2.2 + UP * 0.3)
+        v3.move_to(LEFT * 0 + UP * 0.3)
+
+        self.play(FadeIn(v1), FadeIn(v2), FadeIn(v3))
+        self.wait(1)
+
+        # Averaged vector
+        avg = make_vector("averaged", [BLUE, GREEN, RED, YELLOW], [0.43, 0.5, 0.47, 0.53], WHITE)
+        avg.move_to(RIGHT * 3.5 + UP * 0.3)
+        avg.scale(1.15)
+
+        # Arrows merging
+        arrow1 = Arrow(v1[0].get_right(), avg[0].get_left(), buff=0.1, color=BLUE, stroke_width=3)
+        arrow2 = Arrow(v2[0].get_right(), avg[0].get_left(), buff=0.1, color=GREEN, stroke_width=3)
+        arrow3 = Arrow(v3[0].get_right(), avg[0].get_left(), buff=0.1, color=RED, stroke_width=3)
+
+        self.play(GrowArrow(arrow1), GrowArrow(arrow2), GrowArrow(arrow3))
+        self.play(FadeIn(avg))
+        self.wait(1)
+
+        avg_label = Text("averaged nudges ≈ −∇C", font_size=24, color=YELLOW)
+        avg_label.next_to(avg, UP, buff=0.3)
+        self.play(Write(avg_label))
+        self.wait(1.5)
+
+        quote = Text(
+            '"this collection of averaged nudges is,\nloosely speaking, the negative gradient of the cost function"',
+            font_size=20, color=WHITE,
+        )
+        quote.to_edge(DOWN, buff=0.4)
+        self.play(FadeIn(quote))
+        self.wait(4)
+
+        self.play(
+            FadeOut(v1), FadeOut(v2), FadeOut(v3),
+            FadeOut(arrow1), FadeOut(arrow2), FadeOut(arrow3),
+            FadeOut(avg), FadeOut(avg_label),
+            FadeOut(quote), FadeOut(title),
+        )
+        self.wait(0.3)

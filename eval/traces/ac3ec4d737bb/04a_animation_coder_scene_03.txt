@@ -1,0 +1,178 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_03  @  2026-04-29 10:22:06
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 3
+claim: Weights connected to larger activation values have a stronger influence on the cost function, so the gradient reflects that those weights need proportionally larger adjustments.
+visual_goal: Show two neurons in a preceding layer connected to one neuron in the next layer. Label one incoming activation 'a = 0.9' (bright color) and the other 'a = 0.1' (dim color). Display the two corresponding weights w_A and w_B. Animate a small nudge arrow on each weight and show the resulting change in the next neuron's value as a bar — the bar for w_A (large activation) grows much taller than for w_B. Add a text label: 'larger activation → stronger influence on cost'.
+duration_sec: 20
+
+Class name: Scene03
+Output file will be: scene_03.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene03(Scene):
+    def construct(self):
+        title = Text("Activation Magnitude Drives Influence", font_size=32, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.5)
+
+        # Two source neurons
+        neuron_A = Circle(radius=0.5, color=YELLOW, fill_opacity=0.8).shift(LEFT*4 + UP*1.5)
+        neuron_B = Circle(radius=0.5, color=BLUE, fill_opacity=0.25).shift(LEFT*4 + DOWN*1.5)
+
+        # Target neuron
+        neuron_out = Circle(radius=0.6, color=WHITE, fill_opacity=0.3).shift(RIGHT*2)
+
+        label_A = Text("a = 0.9", font_size=26, color=YELLOW).next_to(neuron_A, LEFT, buff=0.3)
+        label_B = Text("a = 0.1", font_size=26, color=BLUE).next_to(neuron_B, LEFT, buff=0.3)
+        label_out = Text("z", font_size=28, color=WHITE).move_to(neuron_out.get_center())
+
+        # Connections
+        line_A = Line(neuron_A.get_right(), neuron_out.get_left(), color=YELLOW, stroke_width=5)
+        line_B = Line(neuron_B.get_right(), neuron_out.get_left(), color=BLUE, stroke_width=2)
+
+        wA_label = Text("w_A", font_size=24, color=YELLOW).next_to(line_A.get_center(), UP, buff=0.15)
+        wB_label = Text("w_B", font_size=24, color=BLUE).next_to(line_B.get_center(), DOWN, buff=0.15)
+
+        self.play(
+            FadeIn(neuron_A), FadeIn(neuron_B), FadeIn(neuron_out),
+            Write(label_A), Write(label_B), Write(label_out),
+        )
+        self.play(Create(line_A), Create(line_B), Write(wA_label), Write(wB_label))
+        self.wait(1)
+
+        # Nudge arrows on each weight
+        nudge_A = Arrow(start=ORIGIN, end=UP*0.6, color=GREEN, buff=0).next_to(wA_label, RIGHT, buff=0.2)
+        nudge_B = Arrow(start=ORIGIN, end=UP*0.6, color=GREEN, buff=0).next_to(wB_label, RIGHT, buff=0.2)
+        nudge_text_A = Text("Δw", font_size=20, color=GREEN).next_to(nudge_A, RIGHT, buff=0.1)
+        nudge_text_B = Text("Δw", font_size=20, color=GREEN).next_to(nudge_B, RIGHT, buff=0.1)
+
+        self.play(GrowArrow(nudge_A), GrowArrow(nudge_B), Write(nudge_text_A), Write(nudge_text_B))
+        self.wait(0.8)
+
+        # Resulting bars
+        bar_label = Text("Resulting Δz", font_size=22, color=WHITE).shift(RIGHT*4.5 + UP*2.5)
+
+        baseline = Line(RIGHT*3.5 + DOWN*1.5, RIGHT*6 + DOWN*1.5, color=GREY)
+
+        bar_A = Rectangle(width=0.6, height=0.01, color=YELLOW, fill_opacity=0.9, fill_color=YELLOW)
+        bar_A.move_to(RIGHT*4.0 + DOWN*1.5)
+        bar_A.align_to(baseline, DOWN)
+
+        bar_B = Rectangle(width=0.6, height=0.01, color=BLUE, fill_opacity=0.9, fill_color=BLUE)
+        bar_B.move_to(RIGHT*5.5 + DOWN*1.5)
+        bar_B.align_to(baseline, DOWN)
+
+        bar_A_lbl = Text("w_A", font_size=20, color=YELLOW).next_to(RIGHT*4.0 + DOWN*1.5, DOWN, buff=0.2)
+        bar_B_lbl = Text("w_B", font_size=20, color=BLUE).next_to(RIGHT*5.5 + DOWN*1.5, DOWN, buff=0.2)
+
+        self.play(Write(bar_label), Create(baseline), Write(bar_A_lbl), Write(bar_B_lbl))
+        self.wait(0.3)
+
+        # Grow bars proportionally to activation
+        target_A = Rectangle(width=0.6, height=2.7, color=YELLOW, fill_opacity=0.9, fill_color=YELLOW)
+        target_A.next_to(baseline.get_start() + RIGHT*0.5, UP, buff=0).shift(RIGHT*0)
+        target_A.move_to(RIGHT*4.0 + DOWN*1.5 + UP*1.35)
+
+        target_B = Rectangle(width=0.6, height=0.3, color=BLUE, fill_opacity=0.9, fill_color=BLUE)
+        target_B.move_to(RIGHT*5.5 + DOWN*1.5 + UP*0.15)
+
+        self.play(Transform(bar_A, target_A), Transform(bar_B, target_B), run_time=2)
+        self.wait(1)
+
+        # Indicate the larger one
+        self.play(Indicate(bar_A, color=YELLOW, scale_factor=1.1))
+        self.wait(0.5)
+
+        # Conclusion text
+        conclusion = Text("larger activation → stronger influence on cost",
+                          font_size=28, color=GREEN).to_edge(DOWN)
+        self.play(Write(conclusion))
+        self.wait(2.5)
+
+        self.play(
+            FadeOut(title), FadeOut(conclusion),
+            FadeOut(neuron_A), FadeOut(neuron_B), FadeOut(neuron_out),
+            FadeOut(label_A), FadeOut(label_B), FadeOut(label_out),
+            FadeOut(line_A), FadeOut(line_B),
+            FadeOut(wA_label), FadeOut(wB_label),
+            FadeOut(nudge_A), FadeOut(nudge_B),
+            FadeOut(nudge_text_A), FadeOut(nudge_text_B),
+            FadeOut(bar_A), FadeOut(bar_B),
+            FadeOut(bar_label), FadeOut(baseline),
+            FadeOut(bar_A_lbl), FadeOut(bar_B_lbl),
+        )
+        self.wait(0.3)
