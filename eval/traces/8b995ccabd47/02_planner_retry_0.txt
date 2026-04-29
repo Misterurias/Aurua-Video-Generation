@@ -1,0 +1,185 @@
+
+======================================================================
+TRACE: 02_planner_retry_0  @  2026-04-29 08:35:56
+======================================================================
+
+--- SYSTEM ---
+You are the Explanation Planner in Aurua. You turn a verified understanding of a student's confusion into a scene-by-scene plan for a short animated explainer video (~60–90 seconds total).
+
+You will receive:
+  - The Intent agent's output (learning_goal, relevant_spans, key_claims_to_explain)
+  - Optionally: feedback from the Grounding Verifier pointing out which scenes failed, and why. When this is present, revise only the flagged scenes.
+
+You must produce JSON matching this schema exactly:
+
+{
+  "scenes": [
+    {
+      "scene_id": <int, starting from 1>,
+      "claim": "<the specific claim this scene teaches, copy-paste-quotable>",
+      "visual_goal": "<what the animation should show, in plain English>",
+      "source_ref": "<span_id from the retrieved spans>",
+      "duration_sec": <int between 5 and 30>
+    },
+    ...
+  ]
+}
+
+Rules:
+1. Each scene teaches exactly one claim. If a claim is complex, split it across scenes.
+2. Every claim must be directly supported by the span identified in source_ref. Do not use a span that does not contain the claim.
+3. visual_goal must describe something renderable in Manim with basic primitives: circles, arrows, text labels, simple graphs, color highlights. Avoid 3D, complex particle effects, or photorealistic rendering.
+4. Scenes must flow pedagogically: establish context first, then introduce the mechanism, then demonstrate on an example.
+5. Total duration should be 60–90 seconds. Prefer fewer, longer scenes over many short ones.
+6. Typical plan: 3–5 scenes.
+
+When revising after verifier feedback:
+  - Keep scenes that passed verification untouched (same scene_id, same content).
+  - For flagged scenes, either (a) rephrase the claim to match what the cited span actually says, or (b) pick a different span that does support the original claim.
+  - Do not simply delete flagged scenes unless no span can support the claim.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+The previous plan failed verification. Revise ONLY the flagged scenes.
+
+{
+  "learning_goal": "Teach the student that the cost function measures how wrong the network's outputs are across training examples, and that its gradient with respect to the weights and biases tells us how to adjust those parameters to reduce error.",
+  "relevant_spans": [
+    {
+      "span_id": "f0eb1b1859",
+      "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+      "location": "3b1b_ch3.txt:L14-L16",
+      "retrieval_score": 0.7477
+    },
+    {
+      "span_id": "6e05c7a570",
+      "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the last video, as described in the",
+      "location": "3b1b_ch3.txt:L17-L20",
+      "retrieval_score": 0.6123
+    },
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.6813
+    },
+    {
+      "span_id": "1ef6241522",
+      "text": "the cost function involves averaging a certain cost per example over all the tens of thousands of training examples, the way we adjust the weights and biases for a single gradient descent step also depends on every single example. Or",
+      "location": "3b1b_ch3.txt:L46-L49",
+      "retrieval_score": 0.6886
+    },
+    {
+      "span_id": "a954214fb2",
+      "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+      "location": "3b1b_ch3.txt:L132-L136",
+      "retrieval_score": 0.6308
+    }
+  ],
+  "key_claims_to_explain": [
+    "The cost function takes the network's output for a given training example and compares it to the desired output, producing a scalar measure of how wrong the network is.",
+    "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+    "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter \u2014 larger magnitude means that parameter has more influence on the error.",
+    "To train the network, weights and biases are nudged in the direction of the negative gradient of the cost function, which is the direction that most reduces the error."
+  ],
+  "previous_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost function takes the network's output for a given training example and compares it to the desired output, producing a scalar measure of how wrong the network is.",
+        "visual_goal": "Show a small neural network on the left with an output vector of activation values (e.g., 10 circles for digits 0-9, one highlighted in red as the network's guess). On the right, show the desired output vector (one circle highlighted in green as the correct label). Draw arrows from each pair of corresponding output and desired values into a summation symbol, then display a single scalar number labeled 'Cost' emerging from it. Animate the squared differences being computed and summed.",
+        "source_ref": "f0eb1b1859",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+        "visual_goal": "Show a horizontal row of small identical network icons representing many training examples (label a few: 'Example 1', 'Example 2', '...', 'Example N'). Above each icon display a small scalar cost value. Animate all those values flowing into a large averaging bracket, producing a single 'Total Cost' value. Add a text label beneath: 'Total Cost = f(all weights and biases)'.",
+        "source_ref": "6e05c7a570",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 3,
+        "claim": "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter \u2014 larger magnitude means that parameter has more influence on the error.",
+        "visual_goal": "Display a column of weight and bias labels (w1, w2, b1, ...) on the left. Next to each, draw a horizontal bar whose length represents the magnitude of the corresponding gradient component. Highlight a long bar in bright orange labeled 'high sensitivity' and a short bar in light gray labeled 'low sensitivity'. Add a title at the top: 'Gradient of Cost' with an arrow pointing to the bar chart.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "To train the network, weights and biases are nudged in the direction of the negative gradient of the cost function, which is the direction that most reduces the error.",
+        "visual_goal": "Show a simple 2D bowl-shaped cost landscape (parabola curve) with a dot representing the current parameter state on the slope. Draw a red arrow pointing uphill labeled 'gradient', then draw a green arrow pointing downhill labeled 'negative gradient = direction of steepest descent'. Animate the dot stepping downhill along the green arrow toward the minimum, with the cost value displayed decreasing. Label the minimum 'lower error'.",
+        "source_ref": "a954214fb2",
+        "duration_sec": 22
+      }
+    ]
+  },
+  "verifier_feedback": {
+    "verdict": "revise",
+    "per_claim_results": [
+      {
+        "scene_id": 1,
+        "grounded": true,
+        "confidence": 0.75,
+        "reason": null
+      },
+      {
+        "scene_id": 2,
+        "grounded": true,
+        "confidence": 0.78,
+        "reason": null
+      },
+      {
+        "scene_id": 3,
+        "grounded": true,
+        "confidence": 0.72,
+        "reason": null
+      },
+      {
+        "scene_id": 4,
+        "grounded": false,
+        "confidence": 0.82,
+        "reason": "The cited span (a954214fb2) describes the negative gradient as the averaged nudges to each weight and bias, but does not state that nudging in the direction of the negative gradient is the direction that 'most reduces the error' or describe it as the direction of steepest descent. The claim about steepest descent / most reducing error is not supported by this span."
+      }
+    ],
+    "retry_count": 0
+  }
+}
+
+Return the full revised JSON plan.
+
+--- RESPONSE ---
+{
+  "scenes": [
+    {
+      "scene_id": 1,
+      "claim": "The cost function takes the network's output for a given training example and compares it to the desired output, producing a scalar measure of how wrong the network is.",
+      "visual_goal": "Show a small neural network on the left with an output vector of activation values (e.g., 10 circles for digits 0-9, one highlighted in red as the network's guess). On the right, show the desired output vector (one circle highlighted in green as the correct label). Draw arrows from each pair of corresponding output and desired values into a summation symbol, then display a single scalar number labeled 'Cost' emerging from it. Animate the squared differences being computed and summed.",
+      "source_ref": "f0eb1b1859",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 2,
+      "claim": "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+      "visual_goal": "Show a horizontal row of small identical network icons representing many training examples (label a few: 'Example 1', 'Example 2', '...', 'Example N'). Above each icon display a small scalar cost value. Animate all those values flowing into a large averaging bracket, producing a single 'Total Cost' value. Add a text label beneath: 'Total Cost = f(all weights and biases)'.",
+      "source_ref": "6e05c7a570",
+      "duration_sec": 18
+    },
+    {
+      "scene_id": 3,
+      "claim": "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter — larger magnitude means that parameter has more influence on the error.",
+      "visual_goal": "Display a column of weight and bias labels (w1, w2, b1, ...) on the left. Next to each, draw a horizontal bar whose length represents the magnitude of the corresponding gradient component. Highlight a long bar in bright orange labeled 'high sensitivity' and a short bar in light gray labeled 'low sensitivity'. Add a title at the top: 'Gradient of Cost' with an arrow pointing to the bar chart.",
+      "source_ref": "5a360a5db7",
+      "duration_sec": 20
+    },
+    {
+      "scene_id": 4,
+      "claim": "To train the network, weights and biases are nudged by averaging together the desired changes each training example suggests, and this collection of averaged nudges is loosely the negative gradient of the cost function.",
+      "visual_goal": "Show a grid of small training example icons, each with a small arrow representing its desired nudge direction for a given weight. Animate all those arrows being collected and averaged into a single resultant arrow, labeled 'averaged nudges = negative gradient'. Then show the weight value on a number line shifting in the direction of that averaged arrow, with the label 'parameter update' appearing beneath.",
+      "source_ref": "a954214fb2",
+      "duration_sec": 22
+    }
+  ]
+}

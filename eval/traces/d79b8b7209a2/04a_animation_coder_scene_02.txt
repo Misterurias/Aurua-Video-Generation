@@ -1,0 +1,154 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_02  @  2026-04-29 08:15:54
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 2
+claim: Moving in the direction of the negative gradient adjusts all weights and biases simultaneously in the way that most efficiently decreases the cost.
+visual_goal: Show a 2D cost landscape as a simple bowl-shaped parabola drawn with axes (w on x-axis, Cost on y-axis). Place a dot on the curve. Draw an arrow pointing downhill labeled 'negative gradient direction'. Animate the dot sliding along the arrow toward the minimum, with a text annotation 'most efficient decrease'.
+duration_sec: 20
+
+Class name: Scene02
+Output file will be: scene_02.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene02(Scene):
+    def construct(self):
+        # Title
+        title = Text("Negative Gradient: Steepest Descent", font_size=34, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.8)
+
+        # Axes
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[0, 5, 1],
+            x_length=8,
+            y_length=4.5,
+            axis_config={"color": WHITE, "include_tip": True},
+        ).shift(DOWN * 0.5)
+
+        x_label = Text("w", font_size=26).next_to(axes.x_axis.get_end(), RIGHT, buff=0.2)
+        y_label = Text("Cost", font_size=26).next_to(axes.y_axis.get_end(), UP, buff=0.2)
+
+        self.play(Create(axes), Write(x_label), Write(y_label))
+        self.wait(0.5)
+
+        # Bowl-shaped parabola: C(w) = 0.5 * w^2 + 0.3
+        parabola = axes.plot(lambda w: 0.5 * w**2 + 0.3, x_range=[-2.8, 2.8], color=BLUE)
+        self.play(Create(parabola), run_time=1.5)
+        self.wait(0.5)
+
+        # Starting dot on the curve
+        start_w = -2.2
+        start_point = axes.c2p(start_w, 0.5 * start_w**2 + 0.3)
+        dot = Dot(start_point, color=RED, radius=0.12)
+        self.play(FadeIn(dot, scale=1.5))
+        self.wait(0.5)
+
+        # Arrow pointing downhill (toward the minimum)
+        end_w = -0.6
+        end_point = axes.c2p(end_w, 0.5 * end_w**2 + 0.3)
+        arrow = Arrow(start_point, end_point, color=GREEN, buff=0.15, stroke_width=6)
+        arrow_label = Text("negative gradient direction", font_size=24, color=GREEN)
+        arrow_label.next_to(arrow, UP, buff=0.3).shift(LEFT * 0.3)
+
+        self.play(GrowArrow(arrow), Write(arrow_label))
+        self.wait(1.5)
+
+        # Annotation
+        annotation = Text("most efficient decrease", font_size=26, color=YELLOW, weight=BOLD)
+        annotation.next_to(axes, DOWN, buff=0.3)
+        self.play(FadeIn(annotation))
+        self.wait(0.8)
+
+        # Animate dot sliding down the curve toward the minimum
+        def update_dot(mob, alpha):
+            w = start_w + alpha * (0.0 - start_w)
+            mob.move_to(axes.c2p(w, 0.5 * w**2 + 0.3))
+
+        self.play(UpdateFromAlphaFunc(dot, update_dot), run_time=3)
+        self.wait(1)
+
+        # Indicate minimum
+        self.play(Indicate(dot, color=YELLOW, scale_factor=1.6))
+        self.wait(1.5)
+
+        # Fade out
+        self.play(
+            FadeOut(title), FadeOut(axes), FadeOut(parabola),
+            FadeOut(dot), FadeOut(arrow), FadeOut(arrow_label),
+            FadeOut(annotation), FadeOut(x_label), FadeOut(y_label),
+        )
+        self.wait(0.3)

@@ -1,0 +1,195 @@
+{
+  "run_id": "8b995ccabd47",
+  "started_at": "2026-04-29T12:35:15.206051+00:00",
+  "user_question": "What's the relationship between the cost function and the network's weights and biases?",
+  "source_path": "data/transcripts/3b1b_ch3.txt",
+  "source_content": "Here, we tackle backpropagation, the core algorithm behind how neural networks learn.\nAfter a quick recap for where we are, the first thing I'll do is an intuitive walkthrough\nfor what the algorithm is actually doing, without any reference to the formulas.\nThen, for those of you who do want to dive into the math,\nthe next video goes into the calculus underlying all this.\nIf you watched the last two videos, or if you're just jumping in with the appropriate\nbackground, you know what a neural network is, and how it feeds forward information.\nHere, we're doing the classic example of recognizing handwritten digits whose pixel\nvalues get fed into the first layer of the network with 784 neurons,\nand I've been showing a network with two hidden layers having just 16 neurons each,\nand an output layer of 10 neurons, indicating which digit the network is choosing as its answer.\nI'm also expecting you to understand gradient descent,\nas described in the last video, and how what we mean by learning is\nthat we want to find which weights and biases minimize a certain cost function.\nAs a quick reminder, for the cost of a single training example,\nyou take the output the network gives, along with the output you wanted it to give,\nand add up the squares of the differences between each component.\nDoing this for all of your tens of thousands of training examples and\naveraging the results, this gives you the total cost of the network.\nAnd as if that's not enough to think about, as described in the last video,\nthe thing that we're looking for is the negative gradient of this cost function,\nwhich tells you how you need to change all of the weights and biases,\nall of these connections, so as to most efficiently decrease the cost.\nBackpropagation, the topic of this video, is an\nalgorithm for computing that crazy complicated gradient.\nAnd the one idea from the last video that I really want you to hold firmly\nin your mind right now is that because thinking of the gradient vector\nas a direction in 13,000 dimensions is, to put it lightly,\nbeyond the scope of our imaginations, there's another way you can think about it.\nThe magnitude of each component here is telling you how\nsensitive the cost function is to each weight and bias.\nFor example, let's say you go through the process I'm about to describe,\nand you compute the negative gradient, and the component associated with the weight on\nthis edge here comes out to be 3.2, while the component associated with this edge here comes out as 0.1.\nThe way you would interpret that is that the cost of the function is 32 times more\nsensitive to changes in that first weight, so if you were to wiggle that value\njust a little bit, it's going to cause some change to the cost,\nand that change is 32 times greater than what the same wiggle to that second weight would give.\nPersonally, when I was first learning about backpropagation,\nI think the most confusing aspect was just the notation and the index chasing of it all.\nBut once you unwrap what each part of this algorithm is really doing,\neach individual effect it's having is actually pretty intuitive,\nit's just that there's a lot of little adjustments getting layered on top of each other.\nSo I'm going to start things off here with a complete disregard for the notation,\nand just step through the effects each training example has on the weights and biases.\nBecause the cost function involves averaging a certain cost per example over all\nthe tens of thousands of training examples, the way we adjust the weights and\nbiases for a single gradient descent step also depends on every single example.\nOr rather, in principle it should, but for computational efficiency we'll do a little\ntrick later to keep you from needing to hit every single example for every step.\nIn other cases, right now, all we're going to do is focus\nour attention on one single example, this image of a 2.\nWhat effect should this one training example have\non how the weights and biases get adjusted?\nLet's say we're at a point where the network is not well trained yet,\nso the activations in the output are going to look pretty random,\nmaybe something like 0.5, 0.8, 0.2, on and on.\nWe can't directly change those activations, we\nonly have influence on the weights and biases.\nBut it's helpful to keep track of which adjustments\nwe wish should take place to that output layer.\nAnd since we want it to classify the image as a 2,\nwe want that third value to get nudged up while all the others get nudged down.\nMoreover, the sizes of these nudges should be proportional\nto how far away each current value is from its target value.\nFor example, the increase to that number 2 neuron's activation\nis in a sense more important than the decrease to the number 8 neuron,\nwhich is already pretty close to where it should be.\nSo zooming in further, let's focus just on this one neuron,\nthe one whose activation we wish to increase.\nRemember, that activation is defined as a certain weighted sum of all the\nactivations in the previous layer, plus a bias,\nwhich is all then plugged into something like the sigmoid squishification function, or a ReLU.\nSo there are three different avenues that can team\nup together to help increase that activation.\nYou can increase the bias, you can increase the weights,\nand you can change the activations from the previous layer.\nFocusing on how the weights should be adjusted,\nnotice how the weights actually have differing levels of influence.\nThe connections with the brightest neurons from the preceding layer have the\nbiggest effect since those weights are multiplied by larger activation values.\nSo if you were to increase one of those weights,\nit actually has a stronger influence on the ultimate cost function than increasing\nthe weights of connections with dimmer neurons,\nat least as far as this one training example is concerned.\nRemember, when we talk about gradient descent,\nwe don't just care about whether each component should get nudged up or down,\nwe care about which ones give you the most bang for your buck.\nThis, by the way, is at least somewhat reminiscent of a theory in\nneuroscience for how biological networks of neurons learn, Hebbian theory,\noften summed up in the phrase, neurons that fire together wire together.\nHere, the biggest increases to weights, the biggest strengthening of connections,\nhappens between neurons which are the most active,\nand the ones which we wish to become more active.\nIn a sense, the neurons that are firing while seeing a 2 get\nmore strongly linked to those firing when thinking about a 2.\nTo be clear, I'm not in a position to make statements one way or another about\nwhether artificial networks of neurons behave anything like biological brains,\nand this fires together wire together idea comes with a couple meaningful asterisks,\nbut taken as a very loose analogy, I find it interesting to note.\nAnyway, the third way we can help increase this neuron's activation\nis by changing all the activations in the previous layer.\nNamely, if everything connected to that digit 2 neuron with a positive\nweight got brighter, and if everything connected with a negative weight got dimmer,\nthen that digit 2 neuron would become more active.\nAnd similar to the weight changes, you're going to get the most bang for your buck\nby seeking changes that are proportional to the size of the corresponding weights.\nNow of course, we cannot directly influence those activations,\nwe only have control over the weights and biases.\nBut just as with the last layer, it's helpful to\nkeep a note of what those desired changes are.\nBut keep in mind, zooming out one step here, this\nis only what that digit 2 output neuron wants.\nRemember, we also want all the other neurons in the last layer to become less active,\nand each of those other output neurons has its own thoughts about\nwhat should happen to that second to last layer.\nSo, the desire of this digit 2 neuron is added together with the desires\nof all the other output neurons for what should happen to this second to last layer,\nagain in proportion to the corresponding weights,\nand in proportion to how much each of those neurons needs to change.\nThis right here is where the idea of propagating backwards comes in.\nBy adding together all these desired effects, you basically get a\nlist of nudges that you want to happen to this second to last layer.\nAnd once you have those, you can recursively apply the same process to the\nrelevant weights and biases that determine those values,\nrepeating the same process I just walked through and moving backwards through the network.\nAnd zooming out a bit further, remember that this is all just how a single\ntraining example wishes to nudge each one of those weights and biases.\nIf we only listened to what that 2 wanted, the network would\nultimately be incentivized just to classify all images as a 2.\nSo what you do is go through this same backprop routine for every other training example,\nrecording how each of them would like to change the weights and biases,\nand average together those desired changes.\nThis collection here of the averaged nudges to each weight and bias is,\nloosely speaking, the negative gradient of the cost function referenced\nin the last video, or at least something proportional to it.\nI say loosely speaking only because I have yet to get quantitatively precise\nabout those nudges, but if you understood every change I just referenced,\nwhy some are proportionally bigger than others,\nand how they all need to be added together, you understand the mechanics for what backpropagation is actually doing.\nBy the way, in practice, it takes computers an extremely long time to add\nup the influence of every training example every gradient descent step.\nSo here's what's commonly done instead.\nYou randomly shuffle your training data and then divide it into a whole\nbunch of mini-batches, let's say each one having 100 training examples.\nThen you compute a step according to the mini-batch.\nIt's not going to be the actual gradient of the cost function,\nwhich depends on all of the training data, not this tiny subset,\nso it's not the most efficient step downhill,\nbut each mini-batch does give you a pretty good approximation, and more importantly,\nit gives you a significant computational speedup.\nIf you were to plot the trajectory of your network under the relevant cost surface,\nit would be a little more like a drunk man stumbling aimlessly down a hill but taking\nquick steps, rather than a carefully calculating man determining the exact downhill\ndirection of each step before taking a very slow and careful step in that direction.\nThis technique is referred to as stochastic gradient descent.\nThere's a lot going on here, so let's just sum it up for ourselves, shall we?\nBackpropagation is the algorithm for determining how a single training\nexample would like to nudge the weights and biases,\nnot just in terms of whether they should go up or down,\nbut in terms of what relative proportions to those changes cause the\nmost rapid decrease to the cost.\nA true gradient descent step would involve doing this for all your tens of\nthousands of training examples and averaging the desired changes you get.\nBut that's computationally slow, so instead you randomly subdivide the\ndata into mini-batches and compute each step with respect to a mini-batch.\nRepeatedly going through all of the mini-batches and making these adjustments,\nyou will converge towards a local minimum of the cost function,\nwhich is to say your network will end up doing a really good job on the training examples.\nSo with all of that said, every line of code that would go into implementing backprop\nactually corresponds with something you have now seen, at least in informal terms.\nBut sometimes knowing what the math does is only half the battle,\nand just representing the damn thing is where it gets all muddled and confusing.\nSo for those of you who do want to go deeper, the next video goes through the same\nideas that were just presented here, but in terms of the underlying calculus,\nwhich should hopefully make it a little more familiar as you see the topic in other resources.\nBefore that, one thing worth emphasizing is that for this algorithm to work,\nand this goes for all sorts of machine learning beyond just neural networks,\nyou need a lot of training data.\nIn our case, one thing that makes handwritten digits such a nice example is that there\nexists the MNIST database, with so many examples that have been labeled by humans.\nSo a common challenge that those of you working in machine learning will be familiar with\nis just getting the labeled training data you actually need,\nwhether that's having people label tens of thousands of images,\nor whatever other data type you might be dealing with.\n",
+  "intent_output": {
+    "confusion_type": "conceptual",
+    "learning_goal": "Teach the student that the cost function measures how wrong the network's outputs are across training examples, and that its gradient with respect to the weights and biases tells us how to adjust those parameters to reduce error.",
+    "relevant_spans": [
+      {
+        "span_id": "f0eb1b1859",
+        "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+        "location": "3b1b_ch3.txt:L14-L16",
+        "retrieval_score": 0.7477
+      },
+      {
+        "span_id": "6e05c7a570",
+        "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the last video, as described in the",
+        "location": "3b1b_ch3.txt:L17-L20",
+        "retrieval_score": 0.6123
+      },
+      {
+        "span_id": "5a360a5db7",
+        "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+        "location": "3b1b_ch3.txt:L29-L33",
+        "retrieval_score": 0.6813
+      },
+      {
+        "span_id": "1ef6241522",
+        "text": "the cost function involves averaging a certain cost per example over all the tens of thousands of training examples, the way we adjust the weights and biases for a single gradient descent step also depends on every single example. Or",
+        "location": "3b1b_ch3.txt:L46-L49",
+        "retrieval_score": 0.6886
+      },
+      {
+        "span_id": "a954214fb2",
+        "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+        "location": "3b1b_ch3.txt:L132-L136",
+        "retrieval_score": 0.6308
+      }
+    ],
+    "key_claims_to_explain": [
+      "The cost function takes the network's output for a given training example and compares it to the desired output, producing a scalar measure of how wrong the network is.",
+      "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+      "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter — larger magnitude means that parameter has more influence on the error.",
+      "To train the network, weights and biases are nudged in the direction of the negative gradient of the cost function, which is the direction that most reduces the error."
+    ],
+    "clarification_question": null
+  },
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost function takes the network's output for a given training example and compares it to the desired output, and we want to find the weights and biases that minimize this cost.",
+        "visual_goal": "Show a small neural network on the left with an output vector of activation values (10 circles for digits 0-9, one highlighted in red as the network's guess). On the right, show the desired output vector (one circle highlighted in green as the correct label). Draw arrows from each pair of corresponding output and desired values toward a box labeled 'Cost Function'. Display a single scalar number labeled 'Cost' emerging from the box. Add a caption: 'Goal: minimize cost by adjusting weights and biases'.",
+        "source_ref": "f0eb1b1859",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+        "visual_goal": "Show a horizontal row of small identical network icons representing many training examples (label a few: 'Example 1', 'Example 2', '...', 'Example N'). Above each icon display a small scalar cost value. Animate all those values flowing into a large averaging bracket, producing a single 'Total Cost' value. Add a text label beneath: 'Total Cost = f(all weights and biases)'.",
+        "source_ref": "6e05c7a570",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 3,
+        "claim": "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter — larger magnitude means that parameter has more influence on the error.",
+        "visual_goal": "Display a column of weight and bias labels (w1, w2, b1, ...) on the left. Next to each, draw a horizontal bar whose length represents the magnitude of the corresponding gradient component. Highlight a long bar in bright orange labeled 'high sensitivity' and a short bar in light gray labeled 'low sensitivity'. Add a title at the top: 'Gradient of Cost' with an arrow pointing to the bar chart.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "To train the network, weights and biases are nudged by averaging together the desired changes each training example suggests, and this collection of averaged nudges is loosely the negative gradient of the cost function.",
+        "visual_goal": "Show a grid of small training example icons, each with a small arrow representing its desired nudge direction for a given weight. Animate all those arrows being collected and averaged into a single resultant arrow, labeled 'averaged nudges = negative gradient'. Then show the weight value on a number line shifting in the direction of that averaged arrow, with the label 'parameter update' appearing beneath.",
+        "source_ref": "a954214fb2",
+        "duration_sec": 22
+      }
+    ]
+  },
+  "verification_history": [
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.75,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.78,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": true,
+          "confidence": 0.72,
+          "reason": null
+        },
+        {
+          "scene_id": 4,
+          "grounded": false,
+          "confidence": 0.82,
+          "reason": "The cited span (a954214fb2) describes the negative gradient as the averaged nudges to each weight and bias, but does not state that nudging in the direction of the negative gradient is the direction that 'most reduces the error' or describe it as the direction of steepest descent. The claim about steepest descent / most reducing error is not supported by this span."
+        }
+      ],
+      "retry_count": 0
+    },
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": false,
+          "confidence": 0.72,
+          "reason": "The span states that the cost takes the network's output and the desired output, but it is cut off before describing how a scalar measure is produced (e.g., summing squared differences). The claim that squared differences are computed and summed to produce a scalar is not confirmed by the truncated span text."
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.82,
+          "reason": "The span explicitly states 'averaging the results' over 'all of your tens of thousands of training examples' gives 'the total cost of the network', directly supporting the claim."
+        },
+        {
+          "scene_id": 3,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": "The span directly states 'The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias', which supports the claim about gradient magnitude indicating sensitivity."
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.88,
+          "reason": "The span directly states 'average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function', which matches the claim almost verbatim."
+        }
+      ],
+      "retry_count": 1
+    },
+    {
+      "verdict": "pass",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.82,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": true,
+          "confidence": 0.83,
+          "reason": null
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.88,
+          "reason": null
+        }
+      ],
+      "retry_count": 2
+    }
+  ],
+  "animation_code": {
+    "1": "from manim import *\n\nclass Scene01(Scene):\n    def construct(self):\n        # Title\n        title = Text(\"The Cost Function\", font_size=34, color=YELLOW).to_edge(UP)\n        self.play(Write(title))\n        self.wait(0.5)\n\n        # Small neural network on the left\n        layer1 = VGroup(*[Circle(radius=0.12, color=BLUE, fill_opacity=0.6) for _ in range(4)])\n        layer1.arrange(DOWN, buff=0.2)\n        layer2 = VGroup(*[Circle(radius=0.12, color=BLUE, fill_opacity=0.6) for _ in range(3)])\n        layer2.arrange(DOWN, buff=0.3)\n        layer2.next_to(layer1, RIGHT, buff=0.6)\n\n        # Output layer (10 digits)\n        output = VGroup(*[Circle(radius=0.15, color=WHITE, fill_opacity=0.4) for _ in range(10)])\n        output.arrange(DOWN, buff=0.1)\n        output.next_to(layer2, RIGHT, buff=0.6)\n\n        # Network guess highlighted in red (e.g., index 7)\n        guess_idx = 7\n        output[guess_idx].set_color(RED).set_fill(RED, opacity=0.9)\n\n        # Connections (sparse, for visual)\n        connections = VGroup()\n        for n1 in layer1:\n            for n2 in layer2:\n                connections.add(Line(n1.get_right(), n2.get_left(), stroke_width=0.7, stroke_opacity=0.4))\n        for n2 in layer2:\n            for n3 in output:\n                connections.add(Line(n2.get_right(), n3.get_left(), stroke_width=0.5, stroke_opacity=0.3))\n\n        network = VGroup(connections, layer1, layer2, output)\n        network.move_to(LEFT * 4.2 + DOWN * 0.3)\n\n        net_label = Text(\"Network output\", font_size=20, color=WHITE)\n        net_label.next_to(output, UP, buff=0.3)\n\n        self.play(Create(layer1), Create(layer2), run_time=1)\n        self.play(Create(connections), run_time=1)\n        self.play(FadeIn(output), Write(net_label))\n        self.wait(0.5)\n\n        # Desired output vector on the right\n        desired = VGroup(*[Circle(radius=0.15, color=WHITE, fill_opacity=0.2) for _ in range(10)])\n        desired.arrange(DOWN, buff=0.1)\n        desired.move_to(LEFT * 0.3 + DOWN * 0.3)\n\n        correct_idx = 3\n        desired[correct_idx].set_color(GREEN).set_fill(GREEN, opacity=0.9)\n\n        desired_label = Text(\"Desired output\", font_size=20, color=WHITE)\n        desired_label.next_to(desired, UP, buff=0.3)\n\n        self.play(FadeIn(desired), Write(desired_label))\n        self.wait(0.5)\n\n        # Cost Function box\n        cost_box = Rectangle(width=2.0, height=1.0, color=YELLOW, fill_opacity=0.2)\n        cost_box.move_to(RIGHT * 3 + DOWN * 0.3)\n        cost_text = Text(\"Cost\\nFunction\", font_size=20, color=YELLOW).move_to(cost_box.get_center())\n\n        self.play(Create(cost_box), Write(cost_text))\n        self.wait(0.3)\n\n        # Arrows from pairs to cost box\n        arrows = VGroup()\n        for i in range(10):\n            mid = (output[i].get_center() + desired[i].get_center()) / 2\n            a = Arrow(mid, cost_box.get_left(), buff=0.05, stroke_width=2,\n                     max_tip_length_to_length_ratio=0.08, color=BLUE_C)\n            arrows.add(a)\n\n        self.play(LaggedStart(*[GrowArrow(a) for a in arrows], lag_ratio=0.05), run_time=1.5)\n        self.wait(0.5)\n\n        # Cost scalar emerging\n        cost_scalar = Text(\"Cost = 3.42\", font_size=26, color=RED, weight=BOLD)\n        cost_scalar.next_to(cost_box, RIGHT, buff=0.4)\n        out_arrow = Arrow(cost_box.get_right(), cost_scalar.get_left(), buff=0.1, color=RED, stroke_width=3)\n\n        self.play(GrowArrow(out_arrow), Write(cost_scalar))\n        self.wait(1)\n\n        # Caption\n        caption = Text(\"Goal: minimize cost by adjusting weights and biases\",\n                      font_size=24, color=GREEN)\n        caption.to_edge(DOWN, buff=0.5)\n        self.play(Write(caption))\n        self.wait(2.5)\n\n        self.play(\n            FadeOut(network), FadeOut(net_label),\n            FadeOut(desired), FadeOut(desired_label),\n            FadeOut(arrows), FadeOut(cost_box), FadeOut(cost_text),\n            FadeOut(out_arrow), FadeOut(cost_scalar),\n            FadeOut(caption), FadeOut(title)\n        )\n        self.wait(0.3)",
+    "2": "from manim import *\n\nclass Scene02(Scene):\n    def construct(self):\n        title = Text(\"Total Cost Across All Training Examples\", font_size=32, color=YELLOW)\n        title.to_edge(UP)\n        self.play(Write(title))\n        self.wait(0.8)\n\n        # Create small network icons (3 dots stacked = mini network)\n        def make_mini_net(color=BLUE):\n            layer1 = VGroup(*[Dot(radius=0.06, color=color) for _ in range(3)]).arrange(DOWN, buff=0.1)\n            layer2 = VGroup(*[Dot(radius=0.06, color=color) for _ in range(2)]).arrange(DOWN, buff=0.1)\n            layer3 = Dot(radius=0.06, color=color)\n            net = VGroup(layer1, layer2, layer3).arrange(RIGHT, buff=0.2)\n            lines = VGroup()\n            for d1 in layer1:\n                for d2 in layer2:\n                    lines.add(Line(d1.get_center(), d2.get_center(), stroke_width=1, color=GREY))\n            for d2 in layer2:\n                lines.add(Line(d2.get_center(), layer3.get_center(), stroke_width=1, color=GREY))\n            return VGroup(lines, net)\n\n        labels_text = [\"Example 1\", \"Example 2\", \"Example 3\", \"...\", \"Example N\"]\n        cost_values = [\"0.42\", \"0.18\", \"0.65\", \"\", \"0.31\"]\n        cost_color = GREEN\n\n        items = VGroup()\n        cost_labels = VGroup()\n        ex_labels = VGroup()\n\n        for i, (lbl, cv) in enumerate(zip(labels_text, cost_values)):\n            if lbl == \"...\":\n                icon = Text(\"· · ·\", font_size=28, color=BLUE)\n            else:\n                icon = make_mini_net()\n            cost = Text(cv, font_size=22, color=cost_color) if cv else Text(\"\", font_size=22)\n            ex_lbl = Text(lbl, font_size=18, color=WHITE)\n\n            group = VGroup(cost, icon, ex_lbl).arrange(DOWN, buff=0.2)\n            items.add(group)\n            cost_labels.add(cost)\n            ex_labels.add(ex_lbl)\n\n        items.arrange(RIGHT, buff=0.55)\n        items.shift(UP * 0.6)\n\n        self.play(*[FadeIn(it) for it in items], run_time=2)\n        self.wait(1)\n\n        # Highlight the cost values\n        self.play(*[Indicate(c, color=YELLOW) for c in cost_labels if c.text], run_time=1.2)\n        self.wait(0.5)\n\n        # Averaging bracket below\n        bracket_left = Text(\"[\", font_size=80, color=WHITE)\n        bracket_right = Text(\"]\", font_size=80, color=WHITE)\n        avg_label = Text(\"average\", font_size=22, color=YELLOW)\n\n        bracket_left.move_to(DOWN * 1.2 + LEFT * 3.5)\n        bracket_right.move_to(DOWN * 1.2 + RIGHT * 3.5)\n        avg_label.next_to(bracket_left, LEFT, buff=0.2)\n\n        self.play(FadeIn(bracket_left), FadeIn(bracket_right), Write(avg_label))\n        self.wait(0.4)\n\n        # Flow costs into bracket\n        flowing = []\n        target_point = DOWN * 1.2\n        for c in cost_labels:\n            if c.text:\n                flowing.append(c.animate.move_to(target_point).scale(0.6).set_color(YELLOW))\n        self.play(*flowing, run_time=1.8)\n        self.wait(0.3)\n\n        # Replace with Total Cost value\n        total_cost = Text(\"Total Cost = 0.39\", font_size=36, color=YELLOW, weight=BOLD)\n        total_cost.move_to(DOWN * 1.2)\n\n        self.play(\n            FadeOut(cost_labels),\n            FadeIn(total_cost),\n        )\n        self.wait(1)\n\n        # Function label below\n        func_label = Text(\"Total Cost = f(all weights and biases)\", font_size=28, color=WHITE)\n        func_label.next_to(total_cost, DOWN, buff=0.6)\n        self.play(Write(func_label))\n        self.wait(2.5)\n\n        self.play(\n            FadeOut(items), FadeOut(bracket_left), FadeOut(bracket_right),\n            FadeOut(avg_label), FadeOut(total_cost), FadeOut(func_label),\n            FadeOut(title)\n        )\n        self.wait(0.3)",
+    "3": "from manim import *\n\nclass Scene03(Scene):\n    def construct(self):\n        title = Text(\"Gradient of Cost\", font_size=40, color=YELLOW, weight=BOLD)\n        title.to_edge(UP)\n        self.play(Write(title))\n        self.wait(0.5)\n\n        # Parameter labels\n        params = [\"w₁\", \"w₂\", \"w₃\", \"b₁\", \"b₂\"]\n        magnitudes = [3.5, 1.2, 4.5, 0.6, 2.0]  # gradient magnitudes\n        colors = [BLUE, BLUE, ORANGE, LIGHT_GRAY, BLUE]\n\n        labels = VGroup()\n        bars = VGroup()\n        rows = VGroup()\n\n        for i, (p, mag, col) in enumerate(zip(params, magnitudes, colors)):\n            label = Text(p, font_size=28, color=WHITE)\n            bar = Rectangle(\n                width=mag,\n                height=0.4,\n                fill_color=col,\n                fill_opacity=0.9,\n                stroke_color=col,\n                stroke_width=1,\n            )\n            bar.next_to(label, RIGHT, buff=0.4)\n            # Align left edge of bar\n            bar.align_to(label, LEFT).shift(RIGHT * 0.6 + (bar.width / 2) * RIGHT)\n            row = VGroup(label, bar)\n            labels.add(label)\n            bars.add(bar)\n            rows.add(row)\n\n        rows.arrange(DOWN, buff=0.4, aligned_edge=LEFT)\n        rows.shift(LEFT * 2 + DOWN * 0.3)\n\n        # Arrow from title to bar chart\n        arrow = Arrow(\n            start=title.get_bottom() + DOWN * 0.1,\n            end=rows.get_top() + UP * 0.1,\n            color=YELLOW,\n            buff=0.1,\n        )\n        self.play(GrowArrow(arrow))\n        self.wait(0.3)\n\n        # Draw labels first\n        self.play(*[Write(lbl) for lbl in labels])\n        self.wait(0.3)\n\n        # Animate bars growing\n        for bar in bars:\n            self.play(Create(bar), run_time=0.4)\n        self.wait(1)\n\n        # Highlight high-sensitivity bar (w3, index 2)\n        high_bar = bars[2]\n        high_label = Text(\"high sensitivity\", font_size=24, color=ORANGE, weight=BOLD)\n        high_label.next_to(high_bar, RIGHT, buff=0.3)\n        self.play(Indicate(high_bar, color=ORANGE, scale_factor=1.15))\n        self.play(FadeIn(high_label, shift=RIGHT * 0.3))\n        self.wait(1.5)\n\n        # Highlight low-sensitivity bar (b1, index 3)\n        low_bar = bars[3]\n        low_label = Text(\"low sensitivity\", font_size=24, color=LIGHT_GRAY)\n        low_label.next_to(low_bar, RIGHT, buff=0.3)\n        self.play(Indicate(low_bar, color=LIGHT_GRAY, scale_factor=1.15))\n        self.play(FadeIn(low_label, shift=RIGHT * 0.3))\n        self.wait(2)\n\n        # Final pause to let viewer absorb\n        self.wait(1.5)\n\n        self.play(\n            FadeOut(title),\n            FadeOut(arrow),\n            FadeOut(rows),\n            FadeOut(high_label),\n            FadeOut(low_label),\n        )",
+    "4": "from manim import *\nimport random\n\nclass Scene04(Scene):\n    def construct(self):\n        title = Text(\"Averaging Nudges Across Training Examples\", font_size=32, color=YELLOW)\n        title.to_edge(UP)\n        self.play(Write(title))\n        self.wait(0.8)\n\n        # Build a grid of training example icons with small arrows\n        random.seed(7)\n        icons = VGroup()\n        arrows = VGroup()\n        rows, cols = 3, 5\n        nudges = []\n        for r in range(rows):\n            for c in range(cols):\n                box = Square(side_length=0.6, color=BLUE, fill_opacity=0.2, stroke_width=2)\n                box.move_to(np.array([-3.6 + c * 1.0, 1.4 - r * 1.1, 0]))\n                # small nudge value between -1 and 1\n                nudge = random.uniform(-1, 1)\n                nudges.append(nudge)\n                arr = Arrow(\n                    start=box.get_center() + DOWN * 0.05,\n                    end=box.get_center() + RIGHT * (0.45 * nudge) + DOWN * 0.05,\n                    buff=0,\n                    stroke_width=3,\n                    max_tip_length_to_length_ratio=0.4,\n                    color=GREEN if nudge > 0 else RED,\n                )\n                icons.add(box)\n                arrows.add(arr)\n\n        grid = VGroup(icons, arrows).move_to(ORIGIN + UP * 0.3)\n        grid_label = Text(\"training examples & their suggested nudges\", font_size=22, color=WHITE)\n        grid_label.next_to(grid, UP, buff=0.3)\n\n        self.play(FadeIn(icons, lag_ratio=0.05), run_time=1.5)\n        self.play(Write(grid_label))\n        self.play(LaggedStart(*[GrowArrow(a) for a in arrows], lag_ratio=0.05), run_time=2)\n        self.wait(1.2)\n\n        # Collect arrows: animate all moving toward center and averaging\n        avg = sum(nudges) / len(nudges)\n        center_point = DOWN * 0.5\n\n        avg_arrow = Arrow(\n            start=center_point + LEFT * 0,\n            end=center_point + RIGHT * (1.8 * avg / max(abs(avg), 0.3)),\n            buff=0,\n            stroke_width=8,\n            color=YELLOW,\n        )\n\n        self.play(\n            FadeOut(icons),\n            FadeOut(grid_label),\n            *[a.animate.move_to(center_point).set_opacity(0.4) for a in arrows],\n            run_time=1.8,\n        )\n        self.play(\n            FadeOut(arrows),\n            GrowArrow(avg_arrow),\n            run_time=1.2,\n        )\n\n        avg_label = Text(\"averaged nudges  ≈  −∇C\", font_size=28, color=YELLOW)\n        avg_label.next_to(avg_arrow, UP, buff=0.4)\n        self.play(Write(avg_label))\n        self.wait(1.5)\n\n        # Move everything up to make room for number line\n        top_group = VGroup(avg_arrow, avg_label)\n        self.play(top_group.animate.shift(UP * 1.3), FadeOut(title), run_time=1)\n\n        # Number line for the weight\n        nl = NumberLine(\n            x_range=[-3, 3, 1],\n            length=8,\n            include_numbers=False,\n            color=WHITE,\n        )\n        nl.shift(DOWN * 1.2)\n        w_label = Text(\"w\", font_size=26, color=WHITE)\n\n        dot = Dot(color=BLUE, radius=0.14).move_to(nl.n2p(1.2))\n        w_label.next_to(dot, UP, buff=0.2)\n\n        self.play(Create(nl), FadeIn(dot), Write(w_label))\n        self.wait(0.5)\n\n        # Shift in direction of avg\n        direction = 1 if avg > 0 else -1\n        new_x = 1.2 + direction * 1.6\n        new_pos = nl.n2p(new_x)\n\n        update_label = Text(\"parameter update\", font_size=26, color=GREEN)\n        update_label.next_to(nl, DOWN, buff=0.5)\n\n        shift_arrow = Arrow(\n            start=nl.n2p(1.2) + UP * 0.5,\n            end=new_pos + UP * 0.5,\n            buff=0.1,\n            color=GREEN,\n            stroke_width=5,\n        )\n\n        self.play(GrowArrow(shift_arrow))\n        self.play(\n            dot.animate.move_to(new_pos),\n            w_label.animate.next_to(Dot().move_to(new_pos), UP, buff=0.2),\n            run_time=1.5,\n        )\n        self.play(Write(update_label))\n        self.wait(2)\n\n        self.play(\n            FadeOut(VGroup(top_group, nl, dot, w_label, shift_arrow, update_label))\n        )\n        self.wait(0.3)"
+  },
+  "scene_video_paths": {
+    "1": "/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/8b995ccabd47/videos/scene_01.mp4",
+    "2": "/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/8b995ccabd47/videos/scene_02.mp4",
+    "3": "/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/8b995ccabd47/videos/scene_03.mp4",
+    "4": "/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/8b995ccabd47/videos/scene_04.mp4"
+  },
+  "narration_script": null,
+  "status": "rendered",
+  "error": null,
+  "cost": {
+    "input_tokens": 20045,
+    "output_tokens": 10312,
+    "api_calls": 12,
+    "wall_clock_sec": 126.46405243873596
+  }
+}

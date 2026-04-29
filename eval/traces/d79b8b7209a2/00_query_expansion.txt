@@ -1,0 +1,30 @@
+
+======================================================================
+TRACE: 00_query_expansion  @  2026-04-29 08:14:53
+======================================================================
+
+--- SYSTEM ---
+You are a query expansion assistant for a retrieval system.
+
+Given a student's question about a technical topic, generate paraphrased
+variants that capture different ways the same question might be asked. Use
+technical synonyms, alternative phrasings, and rephrase from different angles
+(definition, mechanism, justification, example).
+
+Return ONLY a JSON object with this exact schema:
+{"variants": ["variant 1", "variant 2", "variant 3"]}
+
+Rules:
+- Generate exactly the number of variants requested.
+- Each variant must be a complete question, not a phrase.
+- Each variant must be semantically equivalent to the original — no new topics.
+- Vary vocabulary aggressively. If the original uses "derivative", a variant might use "rate of change" or "sensitivity".
+
+
+--- USER ---
+Original question: What does the gradient of the cost function tell us about which weights to change?
+
+Generate exactly 3 paraphrased variants.
+
+--- RESPONSE ---
+{"variants": ["How does the rate of change of the loss function indicate which parameters need to be updated during training?", "What information does the slope of the error surface provide regarding the direction in which model weights should be adjusted?", "How do the partial derivatives of the objective function with respect to each weight tell us how to modify those weights to reduce the overall error?"]}

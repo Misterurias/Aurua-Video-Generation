@@ -1,0 +1,4 @@
+file '/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/170daccbae47/videos/scene_01.mp4'
+file '/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/170daccbae47/videos/scene_02.mp4'
+file '/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/170daccbae47/videos/scene_03.mp4'
+file '/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/outputs/runs/170daccbae47/videos/scene_04.mp4'

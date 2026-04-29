@@ -1,0 +1,166 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_03  @  2026-04-29 08:37:02
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 3
+claim: The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter — larger magnitude means that parameter has more influence on the error.
+visual_goal: Display a column of weight and bias labels (w1, w2, b1, ...) on the left. Next to each, draw a horizontal bar whose length represents the magnitude of the corresponding gradient component. Highlight a long bar in bright orange labeled 'high sensitivity' and a short bar in light gray labeled 'low sensitivity'. Add a title at the top: 'Gradient of Cost' with an arrow pointing to the bar chart.
+duration_sec: 20
+
+Class name: Scene03
+Output file will be: scene_03.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene03(Scene):
+    def construct(self):
+        title = Text("Gradient of Cost", font_size=40, color=YELLOW, weight=BOLD)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.5)
+
+        # Parameter labels
+        params = ["w₁", "w₂", "w₃", "b₁", "b₂"]
+        magnitudes = [3.5, 1.2, 4.5, 0.6, 2.0]  # gradient magnitudes
+        colors = [BLUE, BLUE, ORANGE, LIGHT_GRAY, BLUE]
+
+        labels = VGroup()
+        bars = VGroup()
+        rows = VGroup()
+
+        for i, (p, mag, col) in enumerate(zip(params, magnitudes, colors)):
+            label = Text(p, font_size=28, color=WHITE)
+            bar = Rectangle(
+                width=mag,
+                height=0.4,
+                fill_color=col,
+                fill_opacity=0.9,
+                stroke_color=col,
+                stroke_width=1,
+            )
+            bar.next_to(label, RIGHT, buff=0.4)
+            # Align left edge of bar
+            bar.align_to(label, LEFT).shift(RIGHT * 0.6 + (bar.width / 2) * RIGHT)
+            row = VGroup(label, bar)
+            labels.add(label)
+            bars.add(bar)
+            rows.add(row)
+
+        rows.arrange(DOWN, buff=0.4, aligned_edge=LEFT)
+        rows.shift(LEFT * 2 + DOWN * 0.3)
+
+        # Arrow from title to bar chart
+        arrow = Arrow(
+            start=title.get_bottom() + DOWN * 0.1,
+            end=rows.get_top() + UP * 0.1,
+            color=YELLOW,
+            buff=0.1,
+        )
+        self.play(GrowArrow(arrow))
+        self.wait(0.3)
+
+        # Draw labels first
+        self.play(*[Write(lbl) for lbl in labels])
+        self.wait(0.3)
+
+        # Animate bars growing
+        for bar in bars:
+            self.play(Create(bar), run_time=0.4)
+        self.wait(1)
+
+        # Highlight high-sensitivity bar (w3, index 2)
+        high_bar = bars[2]
+        high_label = Text("high sensitivity", font_size=24, color=ORANGE, weight=BOLD)
+        high_label.next_to(high_bar, RIGHT, buff=0.3)
+        self.play(Indicate(high_bar, color=ORANGE, scale_factor=1.15))
+        self.play(FadeIn(high_label, shift=RIGHT * 0.3))
+        self.wait(1.5)
+
+        # Highlight low-sensitivity bar (b1, index 3)
+        low_bar = bars[3]
+        low_label = Text("low sensitivity", font_size=24, color=LIGHT_GRAY)
+        low_label.next_to(low_bar, RIGHT, buff=0.3)
+        self.play(Indicate(low_bar, color=LIGHT_GRAY, scale_factor=1.15))
+        self.play(FadeIn(low_label, shift=RIGHT * 0.3))
+        self.wait(2)
+
+        # Final pause to let viewer absorb
+        self.wait(1.5)
+
+        self.play(
+            FadeOut(title),
+            FadeOut(arrow),
+            FadeOut(rows),
+            FadeOut(high_label),
+            FadeOut(low_label),
+        )

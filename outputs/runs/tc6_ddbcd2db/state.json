@@ -1,0 +1,54 @@
+{
+  "run_id": "tc6_ddbcd2db",
+  "started_at": "2026-04-16T21:52:06.555069+00:00",
+  "test_case_id": "TC6",
+  "approach": "single_prompt_baseline",
+  "user_question": "Why is the derivative of the cost with respect to a weight proportional to the activation feeding into it?",
+  "source_path": "data/transcripts/3b1b_ch4.txt",
+  "system_prompt": "You are an educational video planner. Given a student's question and a source transcript, produce a scene-by-scene plan for a short animated explainer video (~60-90 seconds total).\n\nReturn JSON matching this schema exactly:\n\n{\n  \"scenes\": [\n    {\n      \"scene_id\": <int, starting from 1>,\n      \"claim\": \"<specific claim this scene teaches>\",\n      \"visual_goal\": \"<what the animation should show, in plain English>\",\n      \"source_quote\": \"<a direct quote from the transcript that supports this claim>\",\n      \"source_location\": \"<approximate line range in the transcript, e.g. 'L40-L50'>\",\n      \"duration_sec\": <int between 5 and 30>\n    }\n  ]\n}\n\nRules:\n1. Each scene teaches exactly one claim.\n2. Each claim must be supported by a specific quote from the source transcript.\n3. visual_goal must describe something renderable in Manim with basic primitives.\n4. Total duration 60-90 seconds, typically 3-5 scenes.\n5. Pedagogical flow: context first, then mechanism, then example.\n\nReturn only the JSON. No prose, no markdown fences.\n",
+  "user_prompt_length_chars": 9931,
+  "response_raw": "{\n  \"scenes\": [\n    {\n      \"scene_id\": 1,\n      \"claim\": \"The cost depends on the weight through a chain: w(L) \u2192 z(L) \u2192 a(L) \u2192 C.\",\n      \"visual_goal\": \"Show three small number lines labeled z(L), a(L), and C arranged left to right with arrows between them, and a fourth number line for w(L) feeding into z(L). Label the formula z(L) = w(L)*a(L-1) + b(L) above the first arrow.\",\n      \"source_quote\": \"the weight, previous action and the bias all together are used to compute z, which in turn lets us compute a, which finally, along with a constant y, lets us compute the cost.\",\n      \"source_location\": \"L031-L033\",\n      \"duration_sec\": 18\n    },\n    {\n      \"scene_id\": 2,\n      \"claim\": \"By the chain rule, dC/dw(L) = (dz/dw) \u00b7 (da/dz) \u00b7 (dC/da), breaking the sensitivity into three multiplicative ratios.\",\n      \"visual_goal\": \"Display the chain rule equation dC/dw(L) = (dz(L)/dw(L)) \u00b7 (da(L)/dz(L)) \u00b7 (dC/da(L)) with each fraction highlighted in a different color, and small nudge arrows on each number line showing how a nudge to w propagates through z and a to C.\",\n      \"source_quote\": \"This right here is the chain rule, where multiplying together these three ratios gives us the sensitivity of C to small changes in w(L).\",\n      \"source_location\": \"L052-L053\",\n      \"duration_sec\": 20\n    },\n    {\n      \"scene_id\": 3,\n      \"claim\": \"The derivative of z(L) with respect to w(L) equals a(L-1), so the influence of the weight on the cost is directly proportional to the previous neuron's activation.\",\n      \"visual_goal\": \"Zoom into the first ratio dz(L)/dw(L). Show the formula z(L) = w(L)*a(L-1) + b(L), then animate crossing out all terms except a(L-1) to reveal dz/dw = a(L-1). Display a bar whose height scales with a(L-1) to illustrate proportionality.\",\n      \"source_quote\": \"The derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).\",\n      \"source_location\": \"L063\",\n      \"duration_sec\": 20\n    },\n    {\n      \"scene_id\": 4,\n      \"claim\": \"This proportionality embodies the 'neurons that fire together wire together' principle: a stronger incoming activation means the weight has a larger effect on cost.\",\n      \"visual_goal\": \"Show two side-by-side scenarios: one where a(L-1) is small (dim circle, short nudge arrow to C) and one where a(L-1) is large (bright circle, long nudge arrow to C), with the label 'dC/dw \u221d a(L-1)' centered between them.\",\n      \"source_quote\": \"the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in.\",\n      \"source_location\": \"L066-L068\",\n      \"duration_sec\": 17\n    }\n  ]\n}",
+  "response_parsed": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost depends on the weight through a chain: w(L) \u2192 z(L) \u2192 a(L) \u2192 C.",
+        "visual_goal": "Show three small number lines labeled z(L), a(L), and C arranged left to right with arrows between them, and a fourth number line for w(L) feeding into z(L). Label the formula z(L) = w(L)*a(L-1) + b(L) above the first arrow.",
+        "source_quote": "the weight, previous action and the bias all together are used to compute z, which in turn lets us compute a, which finally, along with a constant y, lets us compute the cost.",
+        "source_location": "L031-L033",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 2,
+        "claim": "By the chain rule, dC/dw(L) = (dz/dw) \u00b7 (da/dz) \u00b7 (dC/da), breaking the sensitivity into three multiplicative ratios.",
+        "visual_goal": "Display the chain rule equation dC/dw(L) = (dz(L)/dw(L)) \u00b7 (da(L)/dz(L)) \u00b7 (dC/da(L)) with each fraction highlighted in a different color, and small nudge arrows on each number line showing how a nudge to w propagates through z and a to C.",
+        "source_quote": "This right here is the chain rule, where multiplying together these three ratios gives us the sensitivity of C to small changes in w(L).",
+        "source_location": "L052-L053",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "The derivative of z(L) with respect to w(L) equals a(L-1), so the influence of the weight on the cost is directly proportional to the previous neuron's activation.",
+        "visual_goal": "Zoom into the first ratio dz(L)/dw(L). Show the formula z(L) = w(L)*a(L-1) + b(L), then animate crossing out all terms except a(L-1) to reveal dz/dw = a(L-1). Display a bar whose height scales with a(L-1) to illustrate proportionality.",
+        "source_quote": "The derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).",
+        "source_location": "L063",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "This proportionality embodies the 'neurons that fire together wire together' principle: a stronger incoming activation means the weight has a larger effect on cost.",
+        "visual_goal": "Show two side-by-side scenarios: one where a(L-1) is small (dim circle, short nudge arrow to C) and one where a(L-1) is large (bright circle, long nudge arrow to C), with the label 'dC/dw \u221d a(L-1)' centered between them.",
+        "source_quote": "the amount that the small nudge to the weight influenced the last layer depends on how strong the previous neuron is. Remember, this is where the neurons-that-fire-together-wire-together idea comes in.",
+        "source_location": "L066-L068",
+        "duration_sec": 17
+      }
+    ]
+  },
+  "parse_error": null,
+  "cost": {
+    "input_tokens": 2906,
+    "output_tokens": 857,
+    "api_calls": 1,
+    "wall_clock_sec": 17.033577919006348
+  }
+}

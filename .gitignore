@@ -9,9 +9,6 @@ venv/
 # Retrieval index (regeneratable)
 data/index/
 
-# Run artifacts
-outputs/runs/
-
 # IDE
 .vscode/
 .idea/

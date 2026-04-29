@@ -1,0 +1,150 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_0  @  2026-04-29 08:35:48
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The cost function takes the network's output for a given training example and compares it to the desired output, producing a scalar measure of how wrong the network is.",
+        "visual_goal": "Show a small neural network on the left with an output vector of activation values (e.g., 10 circles for digits 0-9, one highlighted in red as the network's guess). On the right, show the desired output vector (one circle highlighted in green as the correct label). Draw arrows from each pair of corresponding output and desired values into a summation symbol, then display a single scalar number labeled 'Cost' emerging from it. Animate the squared differences being computed and summed.",
+        "source_ref": "f0eb1b1859",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The total cost is computed by averaging the per-example cost over all training examples, making it a function of every weight and bias in the network.",
+        "visual_goal": "Show a horizontal row of small identical network icons representing many training examples (label a few: 'Example 1', 'Example 2', '...', 'Example N'). Above each icon display a small scalar cost value. Animate all those values flowing into a large averaging bracket, producing a single 'Total Cost' value. Add a text label beneath: 'Total Cost = f(all weights and biases)'.",
+        "source_ref": "6e05c7a570",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 3,
+        "claim": "The gradient of the cost function with respect to the weights and biases indicates how sensitive the cost is to each parameter \u2014 larger magnitude means that parameter has more influence on the error.",
+        "visual_goal": "Display a column of weight and bias labels (w1, w2, b1, ...) on the left. Next to each, draw a horizontal bar whose length represents the magnitude of the corresponding gradient component. Highlight a long bar in bright orange labeled 'high sensitivity' and a short bar in light gray labeled 'low sensitivity'. Add a title at the top: 'Gradient of Cost' with an arrow pointing to the bar chart.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 4,
+        "claim": "To train the network, weights and biases are nudged in the direction of the negative gradient of the cost function, which is the direction that most reduces the error.",
+        "visual_goal": "Show a simple 2D bowl-shaped cost landscape (parabola curve) with a dot representing the current parameter state on the slope. Draw a red arrow pointing uphill labeled 'gradient', then draw a green arrow pointing downhill labeled 'negative gradient = direction of steepest descent'. Animate the dot stepping downhill along the green arrow toward the minimum, with the cost value displayed decreasing. Label the minimum 'lower error'.",
+        "source_ref": "a954214fb2",
+        "duration_sec": 22
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "f0eb1b1859",
+      "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+      "location": "3b1b_ch3.txt:L14-L16",
+      "retrieval_score": 0.7477
+    },
+    {
+      "span_id": "6e05c7a570",
+      "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the last video, as described in the",
+      "location": "3b1b_ch3.txt:L17-L20",
+      "retrieval_score": 0.6123
+    },
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.6813
+    },
+    {
+      "span_id": "1ef6241522",
+      "text": "the cost function involves averaging a certain cost per example over all the tens of thousands of training examples, the way we adjust the weights and biases for a single gradient descent step also depends on every single example. Or",
+      "location": "3b1b_ch3.txt:L46-L49",
+      "retrieval_score": 0.6886
+    },
+    {
+      "span_id": "a954214fb2",
+      "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+      "location": "3b1b_ch3.txt:L132-L136",
+      "retrieval_score": 0.6308
+    }
+  ],
+  "retry_count": 0
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.78,
+      "reason": null
+    },
+    {
+      "scene_id": 3,
+      "grounded": true,
+      "confidence": 0.72,
+      "reason": null
+    },
+    {
+      "scene_id": 4,
+      "grounded": false,
+      "confidence": 0.82,
+      "reason": "The cited span (a954214fb2) describes the negative gradient as the averaged nudges to each weight and bias, but does not state that nudging in the direction of the negative gradient is the direction that 'most reduces the error' or describe it as the direction of steepest descent. The claim about steepest descent / most reducing error is not supported by this span."
+    }
+  ],
+  "retry_count": 0
+}

@@ -1,0 +1,169 @@
+
+======================================================================
+TRACE: 01_intent  @  2026-04-29 08:31:18
+======================================================================
+
+--- SYSTEM ---
+You are the Intent & Grounding agent in Aurua, a system that produces short educational explainer videos.
+
+Your job is to take a student's question and a set of source passages retrieved from the course material, and produce a structured understanding of what the student is confused about.
+
+You will receive:
+  - The student's question (free text)
+  - The top-K retrieved source spans with their text and locations
+
+You must produce JSON matching this schema exactly:
+
+{
+  "confusion_type": "mechanical" | "conceptual" | "vague",
+  "learning_goal": "<one-sentence statement of what the explainer needs to teach>",
+  "relevant_spans": [
+    {
+      "span_id": "<from input>",
+      "text": "<from input>",
+      "location": "<from input>",
+      "retrieval_score": <float from input>
+    }
+  ],
+  "key_claims_to_explain": [
+    "<specific factual claim the explainer must establish>",
+    ...
+  ],
+  "clarification_question": null | "<single question to ask the student>"
+}
+
+Rules:
+1. confusion_type:
+   - "mechanical": the student knows the concept exists but doesn't understand how the math or procedure works (e.g., "why is the derivative proportional to the activation?").
+   - "conceptual": the student is missing an underlying idea (e.g., "what does the gradient even represent?").
+   - "vague": the question is too broad or unclear to plan an explainer. If you pick this, set clarification_question to a single specific question that would make the task tractable.
+
+2. relevant_spans:
+   - Include only spans that are actually relevant to the question.
+   - Drop spans that were retrieved but do not help answer the question.
+   - Never invent spans; only use what was given.
+
+3. key_claims_to_explain:
+   - Each claim must be specific and falsifiable (not "backprop is important").
+   - Each claim must be supported by at least one span in relevant_spans.
+   - Typically 2–5 claims. Fewer is better.
+
+4. If confusion_type is "vague", return an empty key_claims_to_explain list and fill clarification_question. Do not fabricate a plan.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Student's question:
+Why do we use a cost function instead of just measuring how many examples the network gets right?
+
+Retrieved source spans (top 10 after query expansion + dedup):
+[
+  {
+    "span_id": "6e05c7a570",
+    "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the",
+    "location": "3b1b_ch3.txt:L17-L20",
+    "retrieval_score": 0.7025
+  },
+  {
+    "span_id": "79659db1a5",
+    "text": "give you a pretty good approximation, and more importantly, it gives you a significant computational speedup. If you were to plot the trajectory of your network under the relevant cost surface, it would be a little more like a drunk",
+    "location": "3b1b_ch3.txt:L150-L153",
+    "retrieval_score": 0.6192
+  },
+  {
+    "span_id": "1ef6241522",
+    "text": "the cost function involves averaging a certain cost per example over all the tens of thousands of training examples, the way we adjust the weights and biases for a single gradient descent step also depends on every single example. Or",
+    "location": "3b1b_ch3.txt:L46-L49",
+    "retrieval_score": 0.6187
+  },
+  {
+    "span_id": "62ae2d6cb1",
+    "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+    "location": "3b1b_ch3.txt:L19-L22",
+    "retrieval_score": 0.6107
+  },
+  {
+    "span_id": "6faf6a7d20",
+    "text": "off here with a complete disregard for the notation, and just step through the effects each training example has on the weights and biases. Because the cost function involves averaging a certain cost per example over all the tens of",
+    "location": "3b1b_ch3.txt:L44-L47",
+    "retrieval_score": 0.5981
+  },
+  {
+    "span_id": "f0eb1b1859",
+    "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+    "location": "3b1b_ch3.txt:L14-L16",
+    "retrieval_score": 0.587
+  },
+  {
+    "span_id": "5a360a5db7",
+    "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+    "location": "3b1b_ch3.txt:L29-L33",
+    "retrieval_score": 0.5446
+  },
+  {
+    "span_id": "df7c2419c9",
+    "text": "network under the relevant cost surface, it would be a little more like a drunk man stumbling aimlessly down a hill but taking quick steps, rather than a carefully calculating man determining the exact downhill direction of each step before",
+    "location": "3b1b_ch3.txt:L152-L155",
+    "retrieval_score": 0.4855
+  },
+  {
+    "span_id": "b9ca04ae1c",
+    "text": "vector as a direction in 13,000 dimensions is, to put it lightly, beyond the scope of our imaginations, there's another way you can think about it. The magnitude of each component here is telling you how sensitive the cost function",
+    "location": "3b1b_ch3.txt:L27-L31",
+    "retrieval_score": 0.4792
+  },
+  {
+    "span_id": "af093213ea",
+    "text": "of the mini-batches and making these adjustments, you will converge towards a local minimum of the cost function, which is to say your network will end up doing a really good job on the training examples. So with all of",
+    "location": "3b1b_ch3.txt:L167-L170",
+    "retrieval_score": 0.4705
+  }
+]
+
+Produce the JSON described in your instructions.
+
+--- RESPONSE ---
+{
+  "confusion_type": "conceptual",
+  "learning_goal": "Explain why a smooth, continuous cost function (like mean squared error) is necessary for training a neural network via gradient descent, rather than simply counting correct predictions.",
+  "relevant_spans": [
+    {
+      "span_id": "f0eb1b1859",
+      "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+      "location": "3b1b_ch3.txt:L14-L16",
+      "retrieval_score": 0.587
+    },
+    {
+      "span_id": "6e05c7a570",
+      "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the",
+      "location": "3b1b_ch3.txt:L17-L20",
+      "retrieval_score": 0.7025
+    },
+    {
+      "span_id": "62ae2d6cb1",
+      "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+      "location": "3b1b_ch3.txt:L19-L22",
+      "retrieval_score": 0.6107
+    },
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.5446
+    },
+    {
+      "span_id": "af093213ea",
+      "text": "of the mini-batches and making these adjustments, you will converge towards a local minimum of the cost function, which is to say your network will end up doing a really good job on the training examples. So with all of",
+      "location": "3b1b_ch3.txt:L167-L170",
+      "retrieval_score": 0.4705
+    }
+  ],
+  "key_claims_to_explain": [
+    "Counting correct predictions produces a flat, discontinuous signal that gives no information about which direction to adjust weights and biases, making gradient descent impossible.",
+    "A cost function measures the difference between the network's output and the desired output for each example, producing a smooth, continuous surface over all weights and biases.",
+    "The negative gradient of the cost function tells the network exactly how to adjust every weight and bias to reduce error, which is the core mechanism of learning.",
+    "Minimizing the cost function averaged over all training examples is equivalent to—and more powerful than—maximizing accuracy, because it guides the network toward correct answers incrementally."
+  ],
+  "clarification_question": null
+}

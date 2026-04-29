@@ -1,0 +1,166 @@
+{
+  "run_id": "6c434c14903b",
+  "started_at": "2026-04-16T21:28:18.187517+00:00",
+  "user_question": "What does the gradient of the cost function tell us about which weights to change?",
+  "source_path": "data/transcripts/3b1b_ch3.txt",
+  "source_content": "Here, we tackle backpropagation, the core algorithm behind how neural networks learn.\nAfter a quick recap for where we are, the first thing I'll do is an intuitive walkthrough\nfor what the algorithm is actually doing, without any reference to the formulas.\nThen, for those of you who do want to dive into the math,\nthe next video goes into the calculus underlying all this.\nIf you watched the last two videos, or if you're just jumping in with the appropriate\nbackground, you know what a neural network is, and how it feeds forward information.\nHere, we're doing the classic example of recognizing handwritten digits whose pixel\nvalues get fed into the first layer of the network with 784 neurons,\nand I've been showing a network with two hidden layers having just 16 neurons each,\nand an output layer of 10 neurons, indicating which digit the network is choosing as its answer.\nI'm also expecting you to understand gradient descent,\nas described in the last video, and how what we mean by learning is\nthat we want to find which weights and biases minimize a certain cost function.\nAs a quick reminder, for the cost of a single training example,\nyou take the output the network gives, along with the output you wanted it to give,\nand add up the squares of the differences between each component.\nDoing this for all of your tens of thousands of training examples and\naveraging the results, this gives you the total cost of the network.\nAnd as if that's not enough to think about, as described in the last video,\nthe thing that we're looking for is the negative gradient of this cost function,\nwhich tells you how you need to change all of the weights and biases,\nall of these connections, so as to most efficiently decrease the cost.\nBackpropagation, the topic of this video, is an\nalgorithm for computing that crazy complicated gradient.\nAnd the one idea from the last video that I really want you to hold firmly\nin your mind right now is that because thinking of the gradient vector\nas a direction in 13,000 dimensions is, to put it lightly,\nbeyond the scope of our imaginations, there's another way you can think about it.\nThe magnitude of each component here is telling you how\nsensitive the cost function is to each weight and bias.\nFor example, let's say you go through the process I'm about to describe,\nand you compute the negative gradient, and the component associated with the weight on\nthis edge here comes out to be 3.2, while the component associated with this edge here comes out as 0.1.\nThe way you would interpret that is that the cost of the function is 32 times more\nsensitive to changes in that first weight, so if you were to wiggle that value\njust a little bit, it's going to cause some change to the cost,\nand that change is 32 times greater than what the same wiggle to that second weight would give.\nPersonally, when I was first learning about backpropagation,\nI think the most confusing aspect was just the notation and the index chasing of it all.\nBut once you unwrap what each part of this algorithm is really doing,\neach individual effect it's having is actually pretty intuitive,\nit's just that there's a lot of little adjustments getting layered on top of each other.\nSo I'm going to start things off here with a complete disregard for the notation,\nand just step through the effects each training example has on the weights and biases.\nBecause the cost function involves averaging a certain cost per example over all\nthe tens of thousands of training examples, the way we adjust the weights and\nbiases for a single gradient descent step also depends on every single example.\nOr rather, in principle it should, but for computational efficiency we'll do a little\ntrick later to keep you from needing to hit every single example for every step.\nIn other cases, right now, all we're going to do is focus\nour attention on one single example, this image of a 2.\nWhat effect should this one training example have\non how the weights and biases get adjusted?\nLet's say we're at a point where the network is not well trained yet,\nso the activations in the output are going to look pretty random,\nmaybe something like 0.5, 0.8, 0.2, on and on.\nWe can't directly change those activations, we\nonly have influence on the weights and biases.\nBut it's helpful to keep track of which adjustments\nwe wish should take place to that output layer.\nAnd since we want it to classify the image as a 2,\nwe want that third value to get nudged up while all the others get nudged down.\nMoreover, the sizes of these nudges should be proportional\nto how far away each current value is from its target value.\nFor example, the increase to that number 2 neuron's activation\nis in a sense more important than the decrease to the number 8 neuron,\nwhich is already pretty close to where it should be.\nSo zooming in further, let's focus just on this one neuron,\nthe one whose activation we wish to increase.\nRemember, that activation is defined as a certain weighted sum of all the\nactivations in the previous layer, plus a bias,\nwhich is all then plugged into something like the sigmoid squishification function, or a ReLU.\nSo there are three different avenues that can team\nup together to help increase that activation.\nYou can increase the bias, you can increase the weights,\nand you can change the activations from the previous layer.\nFocusing on how the weights should be adjusted,\nnotice how the weights actually have differing levels of influence.\nThe connections with the brightest neurons from the preceding layer have the\nbiggest effect since those weights are multiplied by larger activation values.\nSo if you were to increase one of those weights,\nit actually has a stronger influence on the ultimate cost function than increasing\nthe weights of connections with dimmer neurons,\nat least as far as this one training example is concerned.\nRemember, when we talk about gradient descent,\nwe don't just care about whether each component should get nudged up or down,\nwe care about which ones give you the most bang for your buck.\nThis, by the way, is at least somewhat reminiscent of a theory in\nneuroscience for how biological networks of neurons learn, Hebbian theory,\noften summed up in the phrase, neurons that fire together wire together.\nHere, the biggest increases to weights, the biggest strengthening of connections,\nhappens between neurons which are the most active,\nand the ones which we wish to become more active.\nIn a sense, the neurons that are firing while seeing a 2 get\nmore strongly linked to those firing when thinking about a 2.\nTo be clear, I'm not in a position to make statements one way or another about\nwhether artificial networks of neurons behave anything like biological brains,\nand this fires together wire together idea comes with a couple meaningful asterisks,\nbut taken as a very loose analogy, I find it interesting to note.\nAnyway, the third way we can help increase this neuron's activation\nis by changing all the activations in the previous layer.\nNamely, if everything connected to that digit 2 neuron with a positive\nweight got brighter, and if everything connected with a negative weight got dimmer,\nthen that digit 2 neuron would become more active.\nAnd similar to the weight changes, you're going to get the most bang for your buck\nby seeking changes that are proportional to the size of the corresponding weights.\nNow of course, we cannot directly influence those activations,\nwe only have control over the weights and biases.\nBut just as with the last layer, it's helpful to\nkeep a note of what those desired changes are.\nBut keep in mind, zooming out one step here, this\nis only what that digit 2 output neuron wants.\nRemember, we also want all the other neurons in the last layer to become less active,\nand each of those other output neurons has its own thoughts about\nwhat should happen to that second to last layer.\nSo, the desire of this digit 2 neuron is added together with the desires\nof all the other output neurons for what should happen to this second to last layer,\nagain in proportion to the corresponding weights,\nand in proportion to how much each of those neurons needs to change.\nThis right here is where the idea of propagating backwards comes in.\nBy adding together all these desired effects, you basically get a\nlist of nudges that you want to happen to this second to last layer.\nAnd once you have those, you can recursively apply the same process to the\nrelevant weights and biases that determine those values,\nrepeating the same process I just walked through and moving backwards through the network.\nAnd zooming out a bit further, remember that this is all just how a single\ntraining example wishes to nudge each one of those weights and biases.\nIf we only listened to what that 2 wanted, the network would\nultimately be incentivized just to classify all images as a 2.\nSo what you do is go through this same backprop routine for every other training example,\nrecording how each of them would like to change the weights and biases,\nand average together those desired changes.\nThis collection here of the averaged nudges to each weight and bias is,\nloosely speaking, the negative gradient of the cost function referenced\nin the last video, or at least something proportional to it.\nI say loosely speaking only because I have yet to get quantitatively precise\nabout those nudges, but if you understood every change I just referenced,\nwhy some are proportionally bigger than others,\nand how they all need to be added together, you understand the mechanics for what backpropagation is actually doing.\nBy the way, in practice, it takes computers an extremely long time to add\nup the influence of every training example every gradient descent step.\nSo here's what's commonly done instead.\nYou randomly shuffle your training data and then divide it into a whole\nbunch of mini-batches, let's say each one having 100 training examples.\nThen you compute a step according to the mini-batch.\nIt's not going to be the actual gradient of the cost function,\nwhich depends on all of the training data, not this tiny subset,\nso it's not the most efficient step downhill,\nbut each mini-batch does give you a pretty good approximation, and more importantly,\nit gives you a significant computational speedup.\nIf you were to plot the trajectory of your network under the relevant cost surface,\nit would be a little more like a drunk man stumbling aimlessly down a hill but taking\nquick steps, rather than a carefully calculating man determining the exact downhill\ndirection of each step before taking a very slow and careful step in that direction.\nThis technique is referred to as stochastic gradient descent.\nThere's a lot going on here, so let's just sum it up for ourselves, shall we?\nBackpropagation is the algorithm for determining how a single training\nexample would like to nudge the weights and biases,\nnot just in terms of whether they should go up or down,\nbut in terms of what relative proportions to those changes cause the\nmost rapid decrease to the cost.\nA true gradient descent step would involve doing this for all your tens of\nthousands of training examples and averaging the desired changes you get.\nBut that's computationally slow, so instead you randomly subdivide the\ndata into mini-batches and compute each step with respect to a mini-batch.\nRepeatedly going through all of the mini-batches and making these adjustments,\nyou will converge towards a local minimum of the cost function,\nwhich is to say your network will end up doing a really good job on the training examples.\nSo with all of that said, every line of code that would go into implementing backprop\nactually corresponds with something you have now seen, at least in informal terms.\nBut sometimes knowing what the math does is only half the battle,\nand just representing the damn thing is where it gets all muddled and confusing.\nSo for those of you who do want to go deeper, the next video goes through the same\nideas that were just presented here, but in terms of the underlying calculus,\nwhich should hopefully make it a little more familiar as you see the topic in other resources.\nBefore that, one thing worth emphasizing is that for this algorithm to work,\nand this goes for all sorts of machine learning beyond just neural networks,\nyou need a lot of training data.\nIn our case, one thing that makes handwritten digits such a nice example is that there\nexists the MNIST database, with so many examples that have been labeled by humans.\nSo a common challenge that those of you working in machine learning will be familiar with\nis just getting the labeled training data you actually need,\nwhether that's having people label tens of thousands of images,\nor whatever other data type you might be dealing with.\n",
+  "intent_output": {
+    "confusion_type": "conceptual",
+    "learning_goal": "Explain how the gradient of the cost function — built from partial derivatives with respect to each weight and bias — tells us the direction and magnitude of change needed to reduce the cost, and how backpropagation computes those partial derivatives layer by layer.",
+    "relevant_spans": [
+      {
+        "span_id": "924702e6a8",
+        "text": "you know how sensitive the cost function is to the activations in this second-to-last layer, you can just repeat the process for all the weights and biases feeding into that layer. So pat yourself on the back! If all of this makes sense, you have now looked deep into the heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost",
+        "location": "3b1b_ch4.txt:L121-L128",
+        "retrieval_score": 0.6723
+      },
+      {
+        "span_id": "349677eae5",
+        "text": "over all training examples. And of course, that is just one component of the gradient vector, which itself is built up from the partial derivatives of the cost function with respect to all those weights and biases. But even though that's just one of the many partial derivatives we need, it's more than 50% of the work. The sensitivity to the bias, for example, is almost identical. We just need to change out this del z del w term for",
+        "location": "3b1b_ch4.txt:L73-L80",
+        "retrieval_score": 0.6514
+      },
+      {
+        "span_id": "2fe1682a63",
+        "text": "is influenced by its own weight and bias and such... but we're not going to focus on that right now. All of these are just numbers, right? And it can be nice to think of each one as having its own little number line. Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+        "location": "3b1b_ch4.txt:L34-L41",
+        "retrieval_score": 0.6766
+      },
+      {
+        "span_id": "0c04087f7a",
+        "text": "is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of z to the previous activation, comes out to be the weight w(L). And again, even though we're not going to be able to directly influence that previous layer activation, it's helpful to keep track of, because now we can just keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and",
+        "location": "3b1b_ch4.txt:L83-L89",
+        "retrieval_score": 0.6995
+      }
+    ],
+    "key_claims_to_explain": [
+      "The gradient of the cost function is a vector of partial derivatives of the cost with respect to every weight and bias in the network, each measuring how sensitively the cost responds to a small change in that parameter.",
+      "A large positive partial derivative for a given weight means increasing that weight raises the cost, so the network should decrease it; the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.",
+      "Backpropagation computes these partial derivatives efficiently by applying the chain rule layer by layer backwards through the network, reusing sensitivity information from later layers to find sensitivities in earlier layers."
+    ],
+    "clarification_question": null
+  },
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient vector is built up from the partial derivatives of the cost function with respect to all those weights and biases, and computing even one such partial derivative — for example del C del w — is more than 50% of the work needed for the full gradient.",
+        "visual_goal": "Show a small neural network (3 layers, 2-3 nodes each) with labeled weights and biases. Fade in a column vector labeled 'gradient' beside it, with entries written as ∂C/∂w1, ∂C/∂w2, ..., ∂C/∂b1, etc. Highlight one entry ∂C/∂w(L) in a bright color and label it '> 50% of the work', then dim the rest slightly to emphasize that solving one component unlocks the others.",
+        "source_ref": "349677eae5",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?",
+        "visual_goal": "Zoom into the last layer of the network. Show a single weight w(L) with a small number line beneath it. Animate a tiny nudge to w(L) and show the resulting change in the cost C on a separate number line. Label the ratio as ∂C/∂w(L) and display it as the slope of a simple curve C vs w(L) on a 2D axes.",
+        "source_ref": "2fe1682a63",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "The sensitivity to the bias is almost identical to the sensitivity to the weight — we just need to change out the del z del w term — showing that once one partial derivative is known, others follow the same pattern.",
+        "visual_goal": "Side-by-side display of two chain rule expressions: ∂C/∂w = (∂C/∂a)·(∂a/∂z)·(∂z/∂w) and ∂C/∂b = (∂C/∂a)·(∂a/∂z)·(∂z/∂b). Highlight the first two factors in matching colors to show they are shared, then highlight only the last factor in a contrasting color to show the single difference. Animate a bracket labeled 'same' over the shared factors and 'swap this' over the differing term.",
+        "source_ref": "349677eae5",
+        "duration_sec": 15
+      },
+      {
+        "scene_id": 4,
+        "claim": "The sensitivity of z to the previous layer's activation comes out to be the weight w(L), and we can keep iterating this same chain rule idea backwards to see how sensitive the cost function is to previous weights and activations.",
+        "visual_goal": "Show the neural network with arrows flowing right-to-left. At the output layer, display the chain rule expression ∂C/∂w(L) with each factor lighting up in sequence. Then highlight the factor ∂z/∂a(L-1) = w(L) with a label 'equals w(L)'. Animate an arrow carrying the sensitivity value ∂C/∂a(L-1) backwards into the previous layer, where a new chain rule expression assembles reusing that value. Use color-coded boxes for each factor to show the iterative reuse.",
+        "source_ref": "0c04087f7a",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 5,
+        "claim": "These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost.",
+        "visual_goal": "Return to the full network view. Animate the backwards pass sweeping from output to input layer, with each weight and bias lighting up as its partial derivative is computed. As each ∂C/∂w value is found, show it filling into the corresponding slot of the gradient vector column shown in scene 1. End with the complete gradient vector filled in and an arrow labeled 'step opposite gradient' pointing toward lower cost.",
+        "source_ref": "924702e6a8",
+        "duration_sec": 15
+      }
+    ]
+  },
+  "verification_history": [
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": false,
+          "confidence": 0.75,
+          "reason": "The span (349677eae5) mentions that the gradient vector is built from partial derivatives of the cost with respect to all weights and biases, but it does not describe the gradient as 'a vector of partial derivatives... each measuring how sensitively the cost responds to a small change in that parameter.' The span only briefly references the gradient vector in passing while discussing a single component; it does not provide the full definitional claim made in scene 1 about what the gradient vector is and what each entry measures."
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.95,
+          "reason": "The span (2fe1682a63) directly states: 'Our first goal is to understand how sensitive the cost function is to small changes in our weight w(L). Or phrased differently, what is the derivative of C with respect to w(L)?' This matches the claim verbatim."
+        },
+        {
+          "scene_id": 3,
+          "grounded": false,
+          "confidence": 0.8,
+          "reason": "The span (349677eae5) discusses partial derivatives and the gradient vector but does not contain the claim that 'a large positive partial derivative means increasing that weight raises the cost, so the network should decrease it' or that 'the sign and magnitude of each partial derivative directly prescribe how to adjust each weight.' The span does not discuss the interpretation of sign/magnitude of partial derivatives or the update rule."
+        },
+        {
+          "scene_id": 4,
+          "grounded": false,
+          "confidence": 0.72,
+          "reason": "The span (0c04087f7a) describes iterating the chain rule idea backwards and tracking sensitivity to previous weights and activations, which partially supports the claim. However, it does not explicitly state that backpropagation 'computes partial derivatives efficiently' or that it 'reuses sensitivity information from later layers to find sensitivities in earlier layers' as a general algorithmic principle. The span only describes the mechanics of one step without framing it as efficient reuse."
+        },
+        {
+          "scene_id": 5,
+          "grounded": true,
+          "confidence": 0.88,
+          "reason": "The span (924702e6a8) directly states: 'These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost,' which matches the claim closely and directly."
+        }
+      ],
+      "retry_count": 0
+    },
+    {
+      "verdict": "pass",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.92,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.95,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": true,
+          "confidence": 0.88,
+          "reason": null
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.93,
+          "reason": null
+        },
+        {
+          "scene_id": 5,
+          "grounded": true,
+          "confidence": 0.9,
+          "reason": null
+        }
+      ],
+      "retry_count": 1
+    }
+  ],
+  "animation_code": {},
+  "narration_script": null,
+  "status": "verified",
+  "error": null,
+  "cost": {
+    "input_tokens": 10407,
+    "output_tokens": 3791,
+    "api_calls": 5,
+    "wall_clock_sec": 60.33067202568054
+  }
+}

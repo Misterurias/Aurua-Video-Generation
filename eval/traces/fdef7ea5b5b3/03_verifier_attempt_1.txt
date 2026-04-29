@@ -1,0 +1,150 @@
+
+======================================================================
+TRACE: 03_verifier_attempt_1  @  2026-04-29 08:31:59
+======================================================================
+
+--- SYSTEM ---
+You are the Grounding Verifier in Aurua. You check whether each scene in an explainer plan is actually supported by the source material the Planner claims to have used.
+
+Your job is to catch hallucinations before they reach the student. You are adversarial by design: assume the Planner may have drifted from the source.
+
+You will receive:
+  - The scene plan (list of scenes, each with a claim and source_ref)
+  - The full set of relevant source spans with their text
+
+You must produce JSON matching this schema exactly:
+
+{
+  "verdict": "pass" | "revise",
+  "per_claim_results": [
+    {
+      "scene_id": <int>,
+      "grounded": true | false,
+      "confidence": <float between 0 and 1>,
+      "reason": null | "<short explanation of what is ungrounded>"
+    }
+  ],
+  "retry_count": <int, copy from input>
+}
+
+Rules for judging each scene:
+1. Locate the span referenced by source_ref.
+2. Read the span carefully.
+3. Ask: does the span contain the information needed to make this claim true?
+   - If the span directly states the claim: grounded=true, confidence >= 0.8.
+   - If the span implies the claim by reasonable inference from what is written: grounded=true, confidence 0.6–0.8.
+   - If the span is related to the topic but does NOT contain the claim: grounded=false.
+   - If the span contradicts the claim: grounded=false, confidence high.
+4. When grounded=false, reason must describe specifically what is missing or wrong. Not "the span doesn't support it" — instead, "the span describes gradient descent in general but does not mention that the derivative is proportional to the activation feeding into the weight."
+
+Verdict rule: verdict = "pass" if ALL scenes have grounded=true. Otherwise verdict = "revise".
+
+Be strict. A false positive (approving an ungrounded claim) is worse than a false negative (rejecting a good claim) — the Planner can always try again, but a student cannot unsee a wrong explanation.
+
+Return only the JSON. No prose, no markdown fences.
+
+
+--- USER ---
+Verify each scene against its cited source span.
+
+{
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "For the cost of a single training example, you take the output the network gives, along with the output you wanted it to give, and measure the difference between them.",
+        "visual_goal": "Show two columns of circles side by side: left column labeled 'network output' with numerical values, right column labeled 'desired output' with target values. Draw red double-headed arrows between each pair of corresponding circles labeled 'difference'. Add a text label at the bottom: 'cost = how wrong the network was on this example'. Keep the visual clean with simple circles and arrows.",
+        "source_ref": "f0eb1b1859",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 2,
+        "claim": "Going through all tens of thousands of training examples and averaging the individual costs gives you the total cost of the network.",
+        "visual_goal": "Show a grid of small square icons representing training examples, each with a small number beneath it representing its individual cost. Animate arrows flowing from all icons into a single circle in the center labeled 'average = total cost'. Display a simple bar chart where each bar is one example's cost, then collapse them into one averaged bar. Add text: 'total cost = average over all examples'.",
+        "source_ref": "6e05c7a570",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 3,
+        "claim": "The negative gradient of the cost function tells the network exactly how to adjust every weight and bias to reduce error, which is the core mechanism of learning.",
+        "visual_goal": "On a smooth parabolic cost curve plotted over a horizontal axis labeled 'weight value', place a dot representing the current weights. Draw a tangent line at that dot and a bold downward arrow along the curve labeled 'negative gradient = direction to move'. Animate the dot sliding down the curve toward the minimum as the arrow updates. Add a small text box: 'each component tells how sensitive cost is to that weight'.",
+        "source_ref": "62ae2d6cb1",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 4,
+        "claim": "By repeatedly stepping through mini-batches and making gradient-based adjustments, the network converges towards a local minimum of the cost function, ending up doing a really good job on the training examples.",
+        "visual_goal": "Show the smooth parabolic cost curve from scene 3. Animate a dot taking several discrete steps downward along the curve, each step labeled 'mini-batch update'. When the dot reaches the bottom, display a checkmark and the text: 'local minimum reached = network performs well on training data'. Use color progression from red (high cost) to green (low cost) along the curve to reinforce improvement.",
+        "source_ref": "af093213ea",
+        "duration_sec": 22
+      }
+    ]
+  },
+  "relevant_spans": [
+    {
+      "span_id": "f0eb1b1859",
+      "text": "we want to find which weights and biases minimize a certain cost function. As a quick reminder, for the cost of a single training example, you take the output the network gives, along with the output you wanted it to",
+      "location": "3b1b_ch3.txt:L14-L16",
+      "retrieval_score": 0.587
+    },
+    {
+      "span_id": "6e05c7a570",
+      "text": "each component. Doing this for all of your tens of thousands of training examples and averaging the results, this gives you the total cost of the network. And as if that's not enough to think about, as described in the",
+      "location": "3b1b_ch3.txt:L17-L20",
+      "retrieval_score": 0.7025
+    },
+    {
+      "span_id": "62ae2d6cb1",
+      "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+      "location": "3b1b_ch3.txt:L19-L22",
+      "retrieval_score": 0.6107
+    },
+    {
+      "span_id": "5a360a5db7",
+      "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+      "location": "3b1b_ch3.txt:L29-L33",
+      "retrieval_score": 0.5446
+    },
+    {
+      "span_id": "af093213ea",
+      "text": "of the mini-batches and making these adjustments, you will converge towards a local minimum of the cost function, which is to say your network will end up doing a really good job on the training examples. So with all of",
+      "location": "3b1b_ch3.txt:L167-L170",
+      "retrieval_score": 0.4705
+    }
+  ],
+  "retry_count": 1
+}
+
+Return the JSON verdict.
+
+--- RESPONSE ---
+{
+  "verdict": "revise",
+  "per_claim_results": [
+    {
+      "scene_id": 1,
+      "grounded": true,
+      "confidence": 0.75,
+      "reason": null
+    },
+    {
+      "scene_id": 2,
+      "grounded": true,
+      "confidence": 0.85,
+      "reason": null
+    },
+    {
+      "scene_id": 3,
+      "grounded": false,
+      "confidence": 0.82,
+      "reason": "The span 62ae2d6cb1 states that the negative gradient tells you 'how you need to change all' (the text is cut off and does not complete the sentence about weights and biases). The claim that the negative gradient tells the network 'exactly how to adjust every weight and bias to reduce error' and that this is 'the core mechanism of learning' is not fully supported by this truncated span alone. The part about sensitivity of cost to each weight is actually in span 5a360a5db7, which is not cited for this scene."
+    },
+    {
+      "scene_id": 4,
+      "grounded": true,
+      "confidence": 0.88,
+      "reason": null
+    }
+  ],
+  "retry_count": 1
+}

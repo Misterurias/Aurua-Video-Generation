@@ -1,0 +1,183 @@
+
+======================================================================
+TRACE: 04a_animation_coder_scene_01  @  2026-04-29 08:36:32
+======================================================================
+
+--- SYSTEM ---
+You are the Animation Coder in Aurua. You turn a verified scene plan into Manim Community Edition code that renders as a short, clear educational animation.
+
+You will receive ONE scene at a time with: scene_id, claim, visual_goal, duration_sec.
+
+OUTPUT REQUIREMENTS
+
+1. Return ONLY the complete Python file content. No markdown fences. No prose. No explanations.
+2. Begin with: `from manim import *`
+3. Define exactly one class named `Scene{NN}` where NN is the zero-padded scene_id (e.g. `Scene01`, `Scene02`).
+4. The class must inherit from `Scene` and implement `def construct(self):`.
+5. The scene's runtime must approximate duration_sec within ±3 seconds.
+
+HARD CONSTRAINTS — VIOLATING ANY OF THESE WILL CRASH THE RENDERER
+
+- **NO `MathTex`. NO `Tex`.** LaTeX is not available. Use `Text(...)` for everything, including mathematical notation. Write equations as plain Unicode strings: `Text("∂C/∂w")`, `Text("z = w·a + b")`, `Text("−∇C")`.
+- **NO 3D scenes.** Use `Scene` only, never `ThreeDScene`.
+- **NO external assets.** No image files, no SVG imports, no audio. Everything must be drawn with Manim primitives.
+- **NO `manim_ml` or third-party plugins.** Only stdlib + `from manim import *`.
+
+ALLOWED PRIMITIVES
+
+- Shapes: `Circle`, `Square`, `Rectangle`, `Dot`, `Line`, `Arrow`, `DoubleArrow`, `CurvedArrow`, `Ellipse`
+- Text: `Text` (with optional `font_size`, `color`, `weight=BOLD`)
+- Grouping: `VGroup`, `Group`
+- Layout: `.next_to(...)`, `.shift(...)`, `.move_to(...)`, `.to_edge(...)`, `.arrange(...)`
+- Animations: `Create`, `Write`, `FadeIn`, `FadeOut`, `Transform`, `ReplacementTransform`, `Indicate`, `GrowArrow`, `DrawBorderThenFill`
+- Pauses: `self.wait(seconds)`
+
+STYLE GUIDE
+
+- Use a dark background (Manim default). Use bright colors for emphasis: `YELLOW`, `BLUE`, `GREEN`, `RED`, `WHITE`.
+- Add `self.wait(0.5)` to `self.wait(1.5)` between visual beats so narration has room to breathe.
+- Keep object counts modest. A scene with 4-8 named objects is plenty.
+- Position elements with `.next_to()` and `.shift()` rather than absolute coordinates where possible. The frame is roughly 14 wide × 8 tall in Manim units.
+
+EXAMPLE OUTPUT FORMAT (this is the literal shape — your scenes will be richer)
+
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        title = Text("Gradient Vector", font_size=36, color=YELLOW)
+        title.to_edge(UP)
+        self.play(Write(title))
+        self.wait(1)
+
+        vec = VGroup(
+            Text("∂C/∂w₁", font_size=28),
+            Text("∂C/∂w₂", font_size=28),
+            Text("∂C/∂b₁", font_size=28),
+        ).arrange(DOWN, buff=0.4)
+        self.play(FadeIn(vec))
+        self.wait(2)
+
+        self.play(FadeOut(vec), FadeOut(title))
+
+The class will be rendered with:
+  manim -ql -o scene_NN <file>.py SceneNN
+
+Now generate the complete file for the requested scene.
+
+
+--- USER ---
+Generate Manim code for this scene.
+
+scene_id: 1
+claim: The cost function takes the network's output for a given training example and compares it to the desired output, and we want to find the weights and biases that minimize this cost.
+visual_goal: Show a small neural network on the left with an output vector of activation values (10 circles for digits 0-9, one highlighted in red as the network's guess). On the right, show the desired output vector (one circle highlighted in green as the correct label). Draw arrows from each pair of corresponding output and desired values toward a box labeled 'Cost Function'. Display a single scalar number labeled 'Cost' emerging from the box. Add a caption: 'Goal: minimize cost by adjusting weights and biases'.
+duration_sec: 20
+
+Class name: Scene01
+Output file will be: scene_01.py
+
+Return ONLY the complete Python file content. No markdown fences.
+
+--- RESPONSE ---
+from manim import *
+
+class Scene01(Scene):
+    def construct(self):
+        # Title
+        title = Text("The Cost Function", font_size=34, color=YELLOW).to_edge(UP)
+        self.play(Write(title))
+        self.wait(0.5)
+
+        # Small neural network on the left
+        layer1 = VGroup(*[Circle(radius=0.12, color=BLUE, fill_opacity=0.6) for _ in range(4)])
+        layer1.arrange(DOWN, buff=0.2)
+        layer2 = VGroup(*[Circle(radius=0.12, color=BLUE, fill_opacity=0.6) for _ in range(3)])
+        layer2.arrange(DOWN, buff=0.3)
+        layer2.next_to(layer1, RIGHT, buff=0.6)
+
+        # Output layer (10 digits)
+        output = VGroup(*[Circle(radius=0.15, color=WHITE, fill_opacity=0.4) for _ in range(10)])
+        output.arrange(DOWN, buff=0.1)
+        output.next_to(layer2, RIGHT, buff=0.6)
+
+        # Network guess highlighted in red (e.g., index 7)
+        guess_idx = 7
+        output[guess_idx].set_color(RED).set_fill(RED, opacity=0.9)
+
+        # Connections (sparse, for visual)
+        connections = VGroup()
+        for n1 in layer1:
+            for n2 in layer2:
+                connections.add(Line(n1.get_right(), n2.get_left(), stroke_width=0.7, stroke_opacity=0.4))
+        for n2 in layer2:
+            for n3 in output:
+                connections.add(Line(n2.get_right(), n3.get_left(), stroke_width=0.5, stroke_opacity=0.3))
+
+        network = VGroup(connections, layer1, layer2, output)
+        network.move_to(LEFT * 4.2 + DOWN * 0.3)
+
+        net_label = Text("Network output", font_size=20, color=WHITE)
+        net_label.next_to(output, UP, buff=0.3)
+
+        self.play(Create(layer1), Create(layer2), run_time=1)
+        self.play(Create(connections), run_time=1)
+        self.play(FadeIn(output), Write(net_label))
+        self.wait(0.5)
+
+        # Desired output vector on the right
+        desired = VGroup(*[Circle(radius=0.15, color=WHITE, fill_opacity=0.2) for _ in range(10)])
+        desired.arrange(DOWN, buff=0.1)
+        desired.move_to(LEFT * 0.3 + DOWN * 0.3)
+
+        correct_idx = 3
+        desired[correct_idx].set_color(GREEN).set_fill(GREEN, opacity=0.9)
+
+        desired_label = Text("Desired output", font_size=20, color=WHITE)
+        desired_label.next_to(desired, UP, buff=0.3)
+
+        self.play(FadeIn(desired), Write(desired_label))
+        self.wait(0.5)
+
+        # Cost Function box
+        cost_box = Rectangle(width=2.0, height=1.0, color=YELLOW, fill_opacity=0.2)
+        cost_box.move_to(RIGHT * 3 + DOWN * 0.3)
+        cost_text = Text("Cost\nFunction", font_size=20, color=YELLOW).move_to(cost_box.get_center())
+
+        self.play(Create(cost_box), Write(cost_text))
+        self.wait(0.3)
+
+        # Arrows from pairs to cost box
+        arrows = VGroup()
+        for i in range(10):
+            mid = (output[i].get_center() + desired[i].get_center()) / 2
+            a = Arrow(mid, cost_box.get_left(), buff=0.05, stroke_width=2,
+                     max_tip_length_to_length_ratio=0.08, color=BLUE_C)
+            arrows.add(a)
+
+        self.play(LaggedStart(*[GrowArrow(a) for a in arrows], lag_ratio=0.05), run_time=1.5)
+        self.wait(0.5)
+
+        # Cost scalar emerging
+        cost_scalar = Text("Cost = 3.42", font_size=26, color=RED, weight=BOLD)
+        cost_scalar.next_to(cost_box, RIGHT, buff=0.4)
+        out_arrow = Arrow(cost_box.get_right(), cost_scalar.get_left(), buff=0.1, color=RED, stroke_width=3)
+
+        self.play(GrowArrow(out_arrow), Write(cost_scalar))
+        self.wait(1)
+
+        # Caption
+        caption = Text("Goal: minimize cost by adjusting weights and biases",
+                      font_size=24, color=GREEN)
+        caption.to_edge(DOWN, buff=0.5)
+        self.play(Write(caption))
+        self.wait(2.5)
+
+        self.play(
+            FadeOut(network), FadeOut(net_label),
+            FadeOut(desired), FadeOut(desired_label),
+            FadeOut(arrows), FadeOut(cost_box), FadeOut(cost_text),
+            FadeOut(out_arrow), FadeOut(cost_scalar),
+            FadeOut(caption), FadeOut(title)
+        )
+        self.wait(0.3)

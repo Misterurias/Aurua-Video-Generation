@@ -1,0 +1,179 @@
+{
+  "run_id": "d922193d24df",
+  "started_at": "2026-04-29T03:36:43.219231+00:00",
+  "user_question": "Why does the chain rule give us a sum over paths when a neuron connects to multiple neurons?",
+  "source_path": "data/transcripts/3b1b_ch4.txt",
+  "source_content": "The hard assumption here is that you've watched part 3,\ngiving an intuitive walkthrough of the backpropagation algorithm.\nHere we get a little more formal and dive into the relevant calculus.\nIt's normal for this to be at least a little confusing,\nso the mantra to regularly pause and ponder certainly applies as much here as anywhere else.\nOur main goal is to show how people in machine learning commonly think about\nthe chain rule from calculus in the context of networks,\nwhich has a different feel from how most introductory calculus courses approach the subject.\nFor those of you uncomfortable with the relevant calculus,\nI do have a whole series on the topic.\nLet's start off with an extremely simple network,\none where each layer has a single neuron in it.\nThis network is determined by three weights and three biases,\nand our goal is to understand how sensitive the cost function is to these variables.\nThat way, we know which adjustments to those terms will\ncause the most efficient decrease to the cost function.\nAnd we're just going to focus on the connection between the last two neurons.\nLet's label the activation of that last neuron with a superscript L,\nindicating which layer it's in, so the activation of the previous neuron is a^(L-1).\nThese are not exponents, they're just a way of indexing what we're talking about,\nsince I want to save subscripts for different indices later on.\nLet's say that the value we want this last activation to be for\na given training example is y, for example, y might be 0 or 1.\nSo the cost of this network for a single training example is a^(L - y) squared.\nWe'll denote the cost of that one training example as C0.\nAs a reminder, this last activation is determined by a weight,\nwhich I'm going to call w(L), times the previous neuron's activation plus some bias, which I'll call b(L).\nAnd then you pump that through some special nonlinear function like the sigmoid or ReLU.\nIt's actually going to make things easier for us if we give a special name to\nthis weighted sum, like z, with the same superscript as the relevant activations.\nThis is a lot of terms, and a way you might conceptualize it is that the weight,\nprevious action and the bias all together are used to compute z,\nwhich in turn lets us compute a, which finally, along with a constant y, lets us compute the cost.\nAnd of course a(L-1) is influenced by its own weight and bias and such...\nbut we're not going to focus on that right now.\nAll of these are just numbers, right?\nAnd it can be nice to think of each one as having its own little number line.\nOur first goal is to understand how sensitive the\ncost function is to small changes in our weight w(L).\nOr phrased differently, what is the derivative of C with respect to w(L)?\nWhen you see this del w term, think of it as meaning some tiny nudge to W,\nlike a change by 0.01, and think of this del C term as meaning\nwhatever the resulting nudge to the cost is.\nWhat we want is their ratio.\nConceptually, this tiny nudge to w(L) causes some nudge to z(L),\nwhich in turn causes some nudge to a(L), which directly influences the cost.\nSo we break things up by first looking at the ratio of a tiny change to z(L) to\nthis tiny change w(L), that is, the derivative of z(L) with respect to w(L).\nLikewise, you then consider the ratio of the change to a(L) to\nthe tiny change in z(L) that caused it, as well as the ratio\nbetween the final nudge to C and this intermediate nudge to a(L).\nThis right here is the chain rule, where multiplying together these\nthree ratios gives us the sensitivity of C to small changes in w(L).\nSo on screen right now, there's a lot of symbols,\nand take a moment to make sure it's clear what they all are,\nbecause now we're going to compute the relevant derivatives.\nThe derivative of C with respect to a(L) works out to be 2(a(L)-y).\nNotice this means its size is proportional to the difference between the network's\noutput and the thing we want it to be, so if that output was very different,\neven slight changes stand to have a big impact on the final cost function.\nThe derivative of a(L) with respect to z(L) is just the derivative\nof our sigmoid function, or whatever nonlinearity you choose to use.\nAnd the derivative of z(L) with respect to w(L)... In this case comes out to be a(L-1).\nNow I don't know about you, but I think it's easy to get stuck head down in the\nformulas without taking a moment to sit back and remind yourself of what they all mean.\nIn the case of this last derivative, the amount that the small nudge to the\nweight influenced the last layer depends on how strong the previous neuron is.\nRemember, this is where the neurons-that-fire-together-wire-together idea comes in.\nAnd all of this is the derivative with respect to w(L)\nonly of the cost for a specific single training example.\nSince the full cost function involves averaging together all\nthose costs across many different training examples,\nits derivative requires averaging this expression over all training examples.\nAnd of course, that is just one component of the gradient vector,\nwhich itself is built up from the partial derivatives of the\ncost function with respect to all those weights and biases.\nBut even though that's just one of the many partial derivatives we need,\nit's more than 50% of the work.\nThe sensitivity to the bias, for example, is almost identical.\nWe just need to change out this del z del w term for a del z del b.\nAnd if you look at the relevant formula, that derivative comes out to be 1.\nAlso, and this is where the idea of propagating backwards comes in,\nyou can see how sensitive this cost function is to the activation of the previous layer.\nNamely, this initial derivative in the chain rule expression,\nthe sensitivity of z to the previous activation, comes out to be the weight w(L).\nAnd again, even though we're not going to be able to directly influence\nthat previous layer activation, it's helpful to keep track of,\nbecause now we can just keep iterating this same chain rule idea backwards\nto see how sensitive the cost function is to previous weights and previous biases.\nAnd you might think this is an overly simple example, since all layers have one neuron,\nand things are going to get exponentially more complicated for a real network.\nBut honestly, not that much changes when we give the layers multiple neurons,\nreally it's just a few more indices to keep track of.\nRather than the activation of a given layer simply being a(L),\nit's also going to have a subscript indicating which neuron of that layer it is.\nLet's use the letter k to index the layer L-1, and j to index the layer L.\nFor the cost, again we look at what the desired output is,\nbut this time we add up the squares of the differences between these last layer activations and the desired output.\nThat is, you take a sum over a(L)j minus yj squared.\nSince there's a lot more weights, each one has to have a couple more\nindices to keep track of where it is, so let's call the weight of\nthe edge connecting this kth neuron to the jth neuron, w(L)_jk.\nThose indices might feel a little backwards at first,\nbut it lines up with how you'd index the weight matrix I talked about in the part 1 video.\nJust as before, it's still nice to give a name to the relevant weighted sum,\nlike z, so that the activation of the last layer is just your special function,\nlike the sigmoid, applied to z.\nYou can see what I mean, where all of these are essentially the same equations we had\nbefore in the one-neuron-per-layer case, it's just that it looks a little more complicated.\nAnd indeed, the chain-ruled derivative expression describing how\nsensitive the cost is to a specific weight looks essentially the same.\nI'll leave it to you to pause and think about each of those terms if you want.\nWhat does change here, though, is the derivative of the cost\nwith respect to one of the activations in the layer L-1.\nIn this case, the difference is that the neuron influences\nthe cost function through multiple different paths.\nThat is, on the one hand, it influences a(L)0, which plays a role in the cost function,\nbut it also has an influence on a(L)1, which also plays a role in the cost function,\nand you have to add those up.\nAnd that, well, that's pretty much it.\nOnce you know how sensitive the cost function is to the\nactivations in this second-to-last layer, you can just repeat\nthe process for all the weights and biases feeding into that layer.\nSo pat yourself on the back!\nIf all of this makes sense, you have now looked deep into the heart of backpropagation,\nthe workhorse behind how neural networks learn.\nThese chain rule expressions give you the derivatives that determine each component in\nthe gradient that helps minimize the cost of the network by repeatedly stepping downhill.\nIf you sit back and think about all that, this is a lot of layers of complexity to\nwrap your mind around, so don't worry if it takes time for your mind to digest it all.\n",
+  "intent_output": {
+    "confusion_type": "mechanical",
+    "learning_goal": "Explain why the chain rule produces a sum over multiple paths when a neuron's activation feeds into more than one downstream neuron, and how each path contributes a separate partial derivative term that must be added together.",
+    "relevant_spans": [
+      {
+        "span_id": "5d0b154bb4",
+        "text": "where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific",
+        "location": "3b1b_ch4.txt:L108-L111",
+        "retrieval_score": 0.679
+      },
+      {
+        "span_id": "a7895247a2",
+        "text": "Also, and this is where the idea of propagating backwards comes in, you can see how sensitive this cost function is to the activation of the previous layer. Namely, this initial derivative in the chain rule expression, the sensitivity of",
+        "location": "3b1b_ch4.txt:L82-L85",
+        "retrieval_score": 0.5881
+      },
+      {
+        "span_id": "59101efa19",
+        "text": "heart of backpropagation, the workhorse behind how neural networks learn. These chain rule expressions give you the derivatives that determine each component in the gradient that helps minimize the cost of the network by repeatedly stepping downhill. If you sit",
+        "location": "3b1b_ch4.txt:L125-L129",
+        "retrieval_score": 0.5578
+      },
+      {
+        "span_id": "a7e460b4ef",
+        "text": "uncomfortable with the relevant calculus, I do have a whole series on the topic. Let's start off with an extremely simple network, one where each layer has a single neuron in it. This network is determined by three weights and",
+        "location": "3b1b_ch4.txt:L9-L13",
+        "retrieval_score": 0.543
+      }
+    ],
+    "key_claims_to_explain": [
+      "When a neuron connects to multiple downstream neurons, a small change in its activation influences the cost through every one of those connections simultaneously, creating one distinct chain-rule path per connection.",
+      "Because each path independently contributes a change to the cost, the total derivative of the cost with respect to that neuron's activation is the sum of the chain-rule terms from all downstream paths.",
+      "In the single-neuron-per-layer case the chain rule yields a single product of derivatives, but with multiple downstream neurons the same logic extends to a sum of such products—one per path.",
+      "These summed chain-rule expressions are the quantities backpropagation computes when propagating error signals backward through the network to earlier layers."
+    ],
+    "clarification_question": null
+  },
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "Neural networks can be understood by starting with an extremely simple network where each layer has a single neuron, establishing the basic chain-rule path before extending to multiple neurons per layer.",
+        "visual_goal": "Show a vertical chain of three circles labeled a^(L-2), a^(L-1), a^(L), connected by single arrows. Display the text 'one neuron per layer' as a label. Highlight the single chain-rule path with a colored arrow and display the product dC/da^(L) * da^(L)/da^(L-1) as a text label alongside it. Then fade into a new diagram where a^(L-1) fans out to two downstream circles a^(L)_1 and a^(L)_2, making the branching structure visually obvious, with a label 'multiple neurons per layer'.",
+        "source_ref": "a7e460b4ef",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The cost function's sensitivity to an earlier layer's activation is computed by propagating backwards through the network, using the chain rule to link each layer's contribution.",
+        "visual_goal": "Animate the branching diagram with a^(L-1) connecting to a^(L)_1 and a^(L)_2. Show a cost node C on the right. Draw backward-pointing arrows from C through a^(L)_1 and a^(L)_2 toward a^(L-1), colored in a contrasting color to represent backpropagation. Label the backward arrows with 'sensitivity of cost to previous layer' and show the partial derivative symbol dC/da^(L-1) appearing at a^(L-1).",
+        "source_ref": "a7895247a2",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 3,
+        "claim": "In the multi-neuron case the chain-rule derivative expression describing how sensitive the cost is to a specific activation looks more complicated than the single-neuron case, but is essentially the same equations extended across all connections.",
+        "visual_goal": "Keep the branching diagram visible. Show the single-neuron equation dC/da^(L-1) = dC/da^(L) * da^(L)/da^(L-1) on the left side, labeled 'one neuron per layer'. Then on the right side, build up the extended equation dC/da^(L-1) = (dC/da^(L)_1)(da^(L)_1/da^(L-1)) + (dC/da^(L)_2)(da^(L)_2/da^(L-1)) term by term: first show the path-1 product in a colored box, then a plus sign, then the path-2 product in a second colored box. Draw a brace under both sides labeled 'same logic, more paths'. Color-match each term box to its corresponding arrow in the diagram.",
+        "source_ref": "5d0b154bb4",
+        "duration_sec": 25
+      },
+      {
+        "scene_id": 4,
+        "claim": "These chain-rule expressions are the heart of backpropagation and give the derivatives that determine each component of the gradient used to minimize the network's cost.",
+        "visual_goal": "Show the full branching network with arrows reversing direction in a contrasting color, flowing from the output cost node backward through a^(L)_1 and a^(L)_2 and converging back onto a^(L-1), then continuing left to a^(L-2). Display the text 'Chain rule expressions -> gradient components -> minimize cost' centered below the diagram. Briefly flash the summed equation from scene 3 as a reminder, then highlight the word 'backpropagation' in large text at the center of the screen.",
+        "source_ref": "59101efa19",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "verification_history": [
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.65,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": false,
+          "confidence": 0.85,
+          "reason": "The cited span (5d0b154bb4) only states that the equations look more complicated than the one-neuron-per-layer case and begins to describe a chain-rule derivative expression, but it does not contain the specific claim that a nudge to a neuron's activation travels simultaneously through multiple downstream connections creating one distinct chain-rule path per connection. The span is cut off before conveying that idea."
+        },
+        {
+          "scene_id": 3,
+          "grounded": false,
+          "confidence": 0.85,
+          "reason": "The cited span (5d0b154bb4) does not contain the summation formula dC/da^(L-1) = sum of (dC/da^(L)_k)(da^(L)_k/da^(L-1)) terms. The span is truncated mid-sentence and never states that the total derivative is a sum of chain-rule products over all downstream paths."
+        },
+        {
+          "scene_id": 4,
+          "grounded": false,
+          "confidence": 0.8,
+          "reason": "The cited span (59101efa19) describes chain rule expressions as the heart of backpropagation and as giving derivatives for the gradient, but it does not specifically state that these summed chain-rule expressions are what backpropagation computes when propagating error signals backward through earlier layers. The claim about 'summed' paths and 'error signals' propagating backward is not present in the span."
+        }
+      ],
+      "retry_count": 0
+    },
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": false,
+          "confidence": 0.75,
+          "reason": "The span a7e460b4ef describes starting with a simple network where each layer has a single neuron, but it does not mention the chain rule yielding a single product of derivatives, nor does it describe extending to multiple downstream neurons with a sum of products one per path. The claim's core content about the sum-of-products extension is absent from this span."
+        },
+        {
+          "scene_id": 2,
+          "grounded": false,
+          "confidence": 0.72,
+          "reason": "The span a7895247a2 discusses how the cost function is sensitive to the activation of the previous layer and mentions propagating backwards, but it does not describe a neuron connecting to multiple downstream neurons, nor does it describe multiple distinct chain-rule paths (one per connection) or the idea that a nudge travels simultaneously down multiple paths."
+        },
+        {
+          "scene_id": 3,
+          "grounded": false,
+          "confidence": 0.78,
+          "reason": "The span 5d0b154bb4 states that the equations are 'essentially the same as in the one-neuron-per-layer case' and that the chain-ruled derivative expression describes sensitivity to a specific activation, but it does not explicitly state that the total derivative is a sum of chain-rule terms from all downstream paths, nor does it present the summed equation shown in the claim."
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.92,
+          "reason": "The span 59101efa19 directly states that these chain rule expressions are 'the heart of backpropagation' and 'give you the derivatives that determine each component in the gradient that helps minimize the cost of the network,' which directly supports the claim."
+        }
+      ],
+      "retry_count": 1
+    },
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.82,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.75,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": false,
+          "confidence": 0.72,
+          "reason": "The span (5d0b154bb4) begins mid-sentence with 'where all of these are essentially the same equations we had before in the one-neuron-per-layer case, it's just that it looks a little more complicated. And indeed, the chain-ruled derivative expression describing how sensitive the cost is to a specific' — the sentence is cut off and does not actually contain the full claim. Specifically, it does not show or state the summed multi-neuron chain-rule equation (the sum of two path products) that the claim asserts is 'essentially the same equations extended across all connections.' The span implies the idea but does not contain the equation or the explicit statement that it is a sum over all connections."
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.92,
+          "reason": null
+        }
+      ],
+      "retry_count": 2
+    }
+  ],
+  "animation_code": {},
+  "scene_video_paths": {},
+  "narration_script": null,
+  "status": "verification_exhausted",
+  "error": null,
+  "cost": {
+    "input_tokens": 14247,
+    "output_tokens": 4878,
+    "api_calls": 8,
+    "wall_clock_sec": 68.33995461463928
+  }
+}

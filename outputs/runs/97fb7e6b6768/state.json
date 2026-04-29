@@ -1,0 +1,155 @@
+{
+  "run_id": "97fb7e6b6768",
+  "started_at": "2026-04-29T02:58:53.872870+00:00",
+  "user_question": "What does the gradient of the cost function tell us about which weights to change?",
+  "source_path": "data/transcripts/3b1b_ch3.txt",
+  "source_content": "Here, we tackle backpropagation, the core algorithm behind how neural networks learn.\nAfter a quick recap for where we are, the first thing I'll do is an intuitive walkthrough\nfor what the algorithm is actually doing, without any reference to the formulas.\nThen, for those of you who do want to dive into the math,\nthe next video goes into the calculus underlying all this.\nIf you watched the last two videos, or if you're just jumping in with the appropriate\nbackground, you know what a neural network is, and how it feeds forward information.\nHere, we're doing the classic example of recognizing handwritten digits whose pixel\nvalues get fed into the first layer of the network with 784 neurons,\nand I've been showing a network with two hidden layers having just 16 neurons each,\nand an output layer of 10 neurons, indicating which digit the network is choosing as its answer.\nI'm also expecting you to understand gradient descent,\nas described in the last video, and how what we mean by learning is\nthat we want to find which weights and biases minimize a certain cost function.\nAs a quick reminder, for the cost of a single training example,\nyou take the output the network gives, along with the output you wanted it to give,\nand add up the squares of the differences between each component.\nDoing this for all of your tens of thousands of training examples and\naveraging the results, this gives you the total cost of the network.\nAnd as if that's not enough to think about, as described in the last video,\nthe thing that we're looking for is the negative gradient of this cost function,\nwhich tells you how you need to change all of the weights and biases,\nall of these connections, so as to most efficiently decrease the cost.\nBackpropagation, the topic of this video, is an\nalgorithm for computing that crazy complicated gradient.\nAnd the one idea from the last video that I really want you to hold firmly\nin your mind right now is that because thinking of the gradient vector\nas a direction in 13,000 dimensions is, to put it lightly,\nbeyond the scope of our imaginations, there's another way you can think about it.\nThe magnitude of each component here is telling you how\nsensitive the cost function is to each weight and bias.\nFor example, let's say you go through the process I'm about to describe,\nand you compute the negative gradient, and the component associated with the weight on\nthis edge here comes out to be 3.2, while the component associated with this edge here comes out as 0.1.\nThe way you would interpret that is that the cost of the function is 32 times more\nsensitive to changes in that first weight, so if you were to wiggle that value\njust a little bit, it's going to cause some change to the cost,\nand that change is 32 times greater than what the same wiggle to that second weight would give.\nPersonally, when I was first learning about backpropagation,\nI think the most confusing aspect was just the notation and the index chasing of it all.\nBut once you unwrap what each part of this algorithm is really doing,\neach individual effect it's having is actually pretty intuitive,\nit's just that there's a lot of little adjustments getting layered on top of each other.\nSo I'm going to start things off here with a complete disregard for the notation,\nand just step through the effects each training example has on the weights and biases.\nBecause the cost function involves averaging a certain cost per example over all\nthe tens of thousands of training examples, the way we adjust the weights and\nbiases for a single gradient descent step also depends on every single example.\nOr rather, in principle it should, but for computational efficiency we'll do a little\ntrick later to keep you from needing to hit every single example for every step.\nIn other cases, right now, all we're going to do is focus\nour attention on one single example, this image of a 2.\nWhat effect should this one training example have\non how the weights and biases get adjusted?\nLet's say we're at a point where the network is not well trained yet,\nso the activations in the output are going to look pretty random,\nmaybe something like 0.5, 0.8, 0.2, on and on.\nWe can't directly change those activations, we\nonly have influence on the weights and biases.\nBut it's helpful to keep track of which adjustments\nwe wish should take place to that output layer.\nAnd since we want it to classify the image as a 2,\nwe want that third value to get nudged up while all the others get nudged down.\nMoreover, the sizes of these nudges should be proportional\nto how far away each current value is from its target value.\nFor example, the increase to that number 2 neuron's activation\nis in a sense more important than the decrease to the number 8 neuron,\nwhich is already pretty close to where it should be.\nSo zooming in further, let's focus just on this one neuron,\nthe one whose activation we wish to increase.\nRemember, that activation is defined as a certain weighted sum of all the\nactivations in the previous layer, plus a bias,\nwhich is all then plugged into something like the sigmoid squishification function, or a ReLU.\nSo there are three different avenues that can team\nup together to help increase that activation.\nYou can increase the bias, you can increase the weights,\nand you can change the activations from the previous layer.\nFocusing on how the weights should be adjusted,\nnotice how the weights actually have differing levels of influence.\nThe connections with the brightest neurons from the preceding layer have the\nbiggest effect since those weights are multiplied by larger activation values.\nSo if you were to increase one of those weights,\nit actually has a stronger influence on the ultimate cost function than increasing\nthe weights of connections with dimmer neurons,\nat least as far as this one training example is concerned.\nRemember, when we talk about gradient descent,\nwe don't just care about whether each component should get nudged up or down,\nwe care about which ones give you the most bang for your buck.\nThis, by the way, is at least somewhat reminiscent of a theory in\nneuroscience for how biological networks of neurons learn, Hebbian theory,\noften summed up in the phrase, neurons that fire together wire together.\nHere, the biggest increases to weights, the biggest strengthening of connections,\nhappens between neurons which are the most active,\nand the ones which we wish to become more active.\nIn a sense, the neurons that are firing while seeing a 2 get\nmore strongly linked to those firing when thinking about a 2.\nTo be clear, I'm not in a position to make statements one way or another about\nwhether artificial networks of neurons behave anything like biological brains,\nand this fires together wire together idea comes with a couple meaningful asterisks,\nbut taken as a very loose analogy, I find it interesting to note.\nAnyway, the third way we can help increase this neuron's activation\nis by changing all the activations in the previous layer.\nNamely, if everything connected to that digit 2 neuron with a positive\nweight got brighter, and if everything connected with a negative weight got dimmer,\nthen that digit 2 neuron would become more active.\nAnd similar to the weight changes, you're going to get the most bang for your buck\nby seeking changes that are proportional to the size of the corresponding weights.\nNow of course, we cannot directly influence those activations,\nwe only have control over the weights and biases.\nBut just as with the last layer, it's helpful to\nkeep a note of what those desired changes are.\nBut keep in mind, zooming out one step here, this\nis only what that digit 2 output neuron wants.\nRemember, we also want all the other neurons in the last layer to become less active,\nand each of those other output neurons has its own thoughts about\nwhat should happen to that second to last layer.\nSo, the desire of this digit 2 neuron is added together with the desires\nof all the other output neurons for what should happen to this second to last layer,\nagain in proportion to the corresponding weights,\nand in proportion to how much each of those neurons needs to change.\nThis right here is where the idea of propagating backwards comes in.\nBy adding together all these desired effects, you basically get a\nlist of nudges that you want to happen to this second to last layer.\nAnd once you have those, you can recursively apply the same process to the\nrelevant weights and biases that determine those values,\nrepeating the same process I just walked through and moving backwards through the network.\nAnd zooming out a bit further, remember that this is all just how a single\ntraining example wishes to nudge each one of those weights and biases.\nIf we only listened to what that 2 wanted, the network would\nultimately be incentivized just to classify all images as a 2.\nSo what you do is go through this same backprop routine for every other training example,\nrecording how each of them would like to change the weights and biases,\nand average together those desired changes.\nThis collection here of the averaged nudges to each weight and bias is,\nloosely speaking, the negative gradient of the cost function referenced\nin the last video, or at least something proportional to it.\nI say loosely speaking only because I have yet to get quantitatively precise\nabout those nudges, but if you understood every change I just referenced,\nwhy some are proportionally bigger than others,\nand how they all need to be added together, you understand the mechanics for what backpropagation is actually doing.\nBy the way, in practice, it takes computers an extremely long time to add\nup the influence of every training example every gradient descent step.\nSo here's what's commonly done instead.\nYou randomly shuffle your training data and then divide it into a whole\nbunch of mini-batches, let's say each one having 100 training examples.\nThen you compute a step according to the mini-batch.\nIt's not going to be the actual gradient of the cost function,\nwhich depends on all of the training data, not this tiny subset,\nso it's not the most efficient step downhill,\nbut each mini-batch does give you a pretty good approximation, and more importantly,\nit gives you a significant computational speedup.\nIf you were to plot the trajectory of your network under the relevant cost surface,\nit would be a little more like a drunk man stumbling aimlessly down a hill but taking\nquick steps, rather than a carefully calculating man determining the exact downhill\ndirection of each step before taking a very slow and careful step in that direction.\nThis technique is referred to as stochastic gradient descent.\nThere's a lot going on here, so let's just sum it up for ourselves, shall we?\nBackpropagation is the algorithm for determining how a single training\nexample would like to nudge the weights and biases,\nnot just in terms of whether they should go up or down,\nbut in terms of what relative proportions to those changes cause the\nmost rapid decrease to the cost.\nA true gradient descent step would involve doing this for all your tens of\nthousands of training examples and averaging the desired changes you get.\nBut that's computationally slow, so instead you randomly subdivide the\ndata into mini-batches and compute each step with respect to a mini-batch.\nRepeatedly going through all of the mini-batches and making these adjustments,\nyou will converge towards a local minimum of the cost function,\nwhich is to say your network will end up doing a really good job on the training examples.\nSo with all of that said, every line of code that would go into implementing backprop\nactually corresponds with something you have now seen, at least in informal terms.\nBut sometimes knowing what the math does is only half the battle,\nand just representing the damn thing is where it gets all muddled and confusing.\nSo for those of you who do want to go deeper, the next video goes through the same\nideas that were just presented here, but in terms of the underlying calculus,\nwhich should hopefully make it a little more familiar as you see the topic in other resources.\nBefore that, one thing worth emphasizing is that for this algorithm to work,\nand this goes for all sorts of machine learning beyond just neural networks,\nyou need a lot of training data.\nIn our case, one thing that makes handwritten digits such a nice example is that there\nexists the MNIST database, with so many examples that have been labeled by humans.\nSo a common challenge that those of you working in machine learning will be familiar with\nis just getting the labeled training data you actually need,\nwhether that's having people label tens of thousands of images,\nor whatever other data type you might be dealing with.\n",
+  "intent_output": {
+    "confusion_type": "conceptual",
+    "learning_goal": "Teach the student that the gradient of the cost function is a vector whose components indicate both the direction and magnitude of change needed for each weight and bias to most efficiently reduce the cost.",
+    "relevant_spans": [
+      {
+        "span_id": "5a360a5db7",
+        "text": "it. The magnitude of each component here is telling you how sensitive the cost function is to each weight and bias. For example, let's say you go through the process I'm about to describe, and you compute the negative gradient,",
+        "location": "3b1b_ch3.txt:L29-L33",
+        "retrieval_score": 0.7287
+      },
+      {
+        "span_id": "62ae2d6cb1",
+        "text": "the network. And as if that's not enough to think about, as described in the last video, the thing that we're looking for is the negative gradient of this cost function, which tells you how you need to change all",
+        "location": "3b1b_ch3.txt:L19-L22",
+        "retrieval_score": 0.7189
+      },
+      {
+        "span_id": "09d733b6e3",
+        "text": "negative gradient of this cost function, which tells you how you need to change all of the weights and biases, all of these connections, so as to most efficiently decrease the cost. Backpropagation, the topic of this video, is an",
+        "location": "3b1b_ch3.txt:L21-L24",
+        "retrieval_score": 0.7172
+      },
+      {
+        "span_id": "a954214fb2",
+        "text": "them would like to change the weights and biases, and average together those desired changes. This collection here of the averaged nudges to each weight and bias is, loosely speaking, the negative gradient of the cost function referenced in the",
+        "location": "3b1b_ch3.txt:L132-L136",
+        "retrieval_score": 0.6389
+      },
+      {
+        "span_id": "633bca788c",
+        "text": "preceding layer have the biggest effect since those weights are multiplied by larger activation values. So if you were to increase one of those weights, it actually has a stronger influence on the ultimate cost function than increasing the weights",
+        "location": "3b1b_ch3.txt:L80-L84",
+        "retrieval_score": 0.5901
+      }
+    ],
+    "key_claims_to_explain": [
+      "The gradient of the cost function is a vector where each component corresponds to a specific weight or bias, indicating how sensitive the cost is to that parameter.",
+      "The negative gradient points in the direction that most efficiently decreases the cost, telling you how to adjust all weights and biases together in a single step.",
+      "The magnitude of each gradient component determines the relative importance of changing that weight — larger magnitude means that weight has a stronger influence on the cost.",
+      "The negative gradient of the cost function is effectively the average of the desired weight-and-bias nudges across all training examples."
+    ],
+    "clarification_question": null
+  },
+  "scene_plan": {
+    "scenes": [
+      {
+        "scene_id": 1,
+        "claim": "The gradient of the cost function is a vector where each component corresponds to a specific weight or bias, indicating how sensitive the cost is to that parameter.",
+        "visual_goal": "Show a small neural network (3 nodes, 2 connections) on the left. On the right, draw a vertical vector with labeled components: dC/dw1, dC/dw2, dC/db1. Highlight each weight/bias in the network and draw an arrow connecting it to its corresponding vector component, using color coding (e.g., blue for weights, orange for biases). Add a text label: 'Gradient = vector of sensitivities'.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 20
+      },
+      {
+        "scene_id": 2,
+        "claim": "The negative gradient points in the direction that most efficiently decreases the cost, telling you how to adjust all weights and biases together in a single step.",
+        "visual_goal": "Show a 2D cost surface as a simple bowl-shaped curve (parabola) with a dot representing the current parameter position. Draw a red arrow pointing uphill labeled 'gradient' and a green arrow pointing downhill labeled '-gradient (steepest descent)'. Animate the dot moving along the green arrow toward the minimum. Add text: 'Negative gradient = direction of fastest cost reduction'.",
+        "source_ref": "09d733b6e3",
+        "duration_sec": 22
+      },
+      {
+        "scene_id": 3,
+        "claim": "The magnitude of each gradient component tells you how sensitive the cost function is to that specific weight or bias.",
+        "visual_goal": "Display the gradient vector again with two components: one large (e.g., 3.8) and one small (e.g., 0.2). Use bar lengths proportional to magnitude. Highlight the larger bar in bright yellow and label it 'high sensitivity to this weight'. Highlight the smaller bar in gray and label it 'low sensitivity to this weight'. Add text: 'Magnitude = how sensitive the cost is to this parameter'.",
+        "source_ref": "5a360a5db7",
+        "duration_sec": 18
+      },
+      {
+        "scene_id": 4,
+        "claim": "The negative gradient of the cost function is effectively the average of the desired weight-and-bias nudges across all training examples.",
+        "visual_goal": "Show three training examples as three small colored arrows (nudge vectors) pointing in slightly different directions, each labeled 'example 1', 'example 2', 'example 3'. Animate them being averaged: the arrows combine into a single resultant arrow labeled 'average nudge = negative gradient'. Use a simple vector addition diagram with dashed lines showing the averaging process.",
+        "source_ref": "a954214fb2",
+        "duration_sec": 20
+      }
+    ]
+  },
+  "verification_history": [
+    {
+      "verdict": "revise",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.75,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": false,
+          "confidence": 0.82,
+          "reason": "The span (5a360a5db7) states that the magnitude of each component indicates how sensitive the cost function is to each weight and bias, but it does not state that larger magnitude means that weight has a 'stronger influence on the cost' in the sense of causal impact. The claim conflates sensitivity (gradient magnitude) with influence/importance, which is a subtle but meaningful distinction not supported by this span. The span about weights multiplied by larger activations having stronger influence (633bca788c) is not cited here and refers to a different concept."
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": null
+        }
+      ],
+      "retry_count": 0
+    },
+    {
+      "verdict": "pass",
+      "per_claim_results": [
+        {
+          "scene_id": 1,
+          "grounded": true,
+          "confidence": 0.75,
+          "reason": null
+        },
+        {
+          "scene_id": 2,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": null
+        },
+        {
+          "scene_id": 3,
+          "grounded": true,
+          "confidence": 0.85,
+          "reason": null
+        },
+        {
+          "scene_id": 4,
+          "grounded": true,
+          "confidence": 0.82,
+          "reason": null
+        }
+      ],
+      "retry_count": 1
+    }
+  ],
+  "animation_code": {},
+  "scene_video_paths": {},
+  "narration_script": null,
+  "status": "failed",
+  "error": "BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': '`temperature` is deprecated for this model.'}, 'request_id': 'req_011CaXKCSwW86oHr3GeHA1i1'}\nTraceback (most recent call last):\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/src/run.py\", line 79, in run_pipeline\n    state = run_animation_coder(state)\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/src/agents/animation_coder.py\", line 33, in run_animation_coder\n    code = _generate_scene_code(scene, state, trace_dir)\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/src/agents/animation_coder.py\", line 57, in _generate_scene_code\n    raw = call_claude(\n        system_prompt=ANIMATION_CODER_SYSTEM_PROMPT,\n    ...<5 lines>...\n        trace_dir=trace_dir,\n    )\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/src/claude_client.py\", line 55, in call_claude\n    response = client.messages.create(\n        model=model,\n    ...<3 lines>...\n        messages=[{\"role\": \"user\", \"content\": user_prompt}],\n    )\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/.venv/lib/python3.13/site-packages/anthropic/_utils/_utils.py\", line 283, in wrapper\n    return func(*args, **kwargs)\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/.venv/lib/python3.13/site-packages/anthropic/resources/messages/messages.py\", line 1000, in create\n    return self._post(\n           ~~~~~~~~~~^\n        \"/v1/messages\",\n        ^^^^^^^^^^^^^^^\n    ...<30 lines>...\n        stream_cls=Stream[RawMessageStreamEvent],\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/.venv/lib/python3.13/site-packages/anthropic/_base_client.py\", line 1368, in post\n    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))\n                           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/papijorge/Downloads/College/FourthYear/AgenticTech/Project/Phase2/Agentic Technologies Course Project/aurua/.venv/lib/python3.13/site-packages/anthropic/_base_client.py\", line 1141, in request\n    raise self._make_status_error_from_response(err.response) from None\nanthropic.BadRequestError: Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': '`temperature` is deprecated for this model.'}, 'request_id': 'req_011CaXKCSwW86oHr3GeHA1i1'}\n",
+  "cost": {
+    "input_tokens": 9229,
+    "output_tokens": 2792,
+    "api_calls": 6,
+    "wall_clock_sec": 39.52381110191345
+  }
+}
